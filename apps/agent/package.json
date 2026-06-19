@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run src/index.ts",
+    "start": "bun run dist/index.js",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "test": "bun test",
     "seed": "bun run prisma/seed.ts",
