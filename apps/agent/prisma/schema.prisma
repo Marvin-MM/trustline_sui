@@ -1,0 +1,876 @@
+// This is your Prisma schema file.
+// BondFlow Agent Backend — Complete Database Schema
+// 
+// Every model has: createdAt DateTime @default(now()), updatedAt DateTime @updatedAt
+// UUID primary keys via @default(uuid())
+// All on-chain addresses as String
+// All USDC amounts as BigInt (6 decimal base units, never Float or Decimal)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Enums
+// ============================================================
+
+enum TenantPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum TenantRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum RelationshipStatus {
+  PENDING_ON_CHAIN
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  FAILED_ON_CHAIN
+}
+
+enum MilestoneStatus {
+  PENDING
+  SUBMITTED
+  CONDITION_MET
+  RELEASED
+  CANCELLED
+  DISPUTED
+}
+
+enum ReleasePolicy {
+  PAYER_APPROVAL
+  AUTO_AFTER_CHALLENGE
+}
+
+enum DeliverableVerificationStatus {
+  UPLOADED
+  SCANNING
+  VERIFIED
+  REJECTED
+  FAILED
+}
+
+enum ConditionType {
+  MANUAL
+  TIME_GATED
+  DELIVERABLE
+}
+
+enum DisputeStatus {
+  NONE
+  OPEN
+  RESOLVED_RECIPIENT
+  RESOLVED_PAYER
+}
+
+enum AgentActionType {
+  ANOMALY_DETECTED
+  PATTERN_RECOGNIZED
+  DELIVERABLE_VERIFIED
+  DUPLICATE_PREVENTED
+  CONDITION_REGISTERED
+  MILESTONE_RELEASED
+  MEMORY_WRITTEN
+  MEMORY_INSIGHT_GENERATED
+  CONTENT_SCANNED
+  REPUTATION_BUILT
+  ATTESTATION_MINTED
+}
+
+enum TransactionType {
+  CREATE_RELATIONSHIP
+  GRANT_AGENT_CAP
+  REVOKE_AGENT_CAP
+  REGISTER_DELIVERABLE
+  RELEASE_MILESTONE
+  CANCEL_RELATIONSHIP
+  CANCEL_MILESTONE
+  RAISE_DISPUTE
+  RESOLVE_DISPUTE
+  MINT_ATTESTATION
+  MINT_REPUTATION_PROOF
+  UPDATE_REPUTATION_PROOF
+  SUBMIT_DELIVERABLE
+  VERIFY_DELIVERABLE
+  REJECT_DELIVERABLE
+  GRANT_OPERATOR_CAP
+  REVOKE_CAP
+  AUTO_RELEASE_MILESTONE
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+enum NotificationType {
+  RELATIONSHIP_CREATED
+  MILESTONE_CONDITION_MET
+  MILESTONE_RELEASED
+  DISPUTE_RAISED
+  DISPUTE_RESOLVED
+  ANOMALY_FLAGGED
+  REPUTATION_PROOF_MINTED
+  TEAM_MEMBER_INVITED
+  TEAM_MEMBER_JOINED
+}
+
+enum EmailProvider {
+  RESEND
+  NODEMAILER
+}
+
+enum ResourceType {
+  CLAUDE_TOKENS
+  GEMINI_TOKENS
+  WALRUS_BYTES
+  SUI_GAS
+}
+
+enum ScanStatus {
+  PENDING
+  CLEAN
+  SUSPICIOUS
+}
+
+enum AuditAction {
+  TENANT_CREATED
+  TENANT_UPDATED
+  TENANT_MEMBER_INVITED
+  TENANT_MEMBER_ACCEPTED
+  TENANT_MEMBER_REMOVED
+  TENANT_MEMBER_ROLE_CHANGED
+  TENANT_OWNERSHIP_TRANSFERRED
+  FEATURE_FLAG_CHANGED
+  PROMPT_CREATED
+  PROMPT_ACTIVATED
+  WEBHOOK_PROCESSED
+  DLQ_JOB_RETRIED
+  RELATIONSHIP_CREATED
+  RELATIONSHIP_PTB_BUILT
+  DISPUTE_RESOLVED
+  REFRESH_TOKEN_REUSE_DETECTED
+}
+
+// ============================================================
+// Multi-Tenancy Models
+// ============================================================
+
+/// Represents an organization or team that groups users and data together.
+/// Tenants provide data isolation — users in Tenant A cannot access Tenant B data.
+model Tenant {
+  id          String     @id @default(uuid())
+  /// URL-safe identifier like "acme-corp" used in URLs and headers
+  slug        String     @unique
+  name        String
+  /// Sui wallet address of the tenant creator
+  ownerWallet String
+  plan        TenantPlan @default(FREE)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  members                TenantUser[]
+  paymentRelationships   PaymentRelationship[]
+  agentActions           AgentAction[]
+  submittedTransactions  SubmittedTransaction[]
+  notifications          Notification[]
+  relationshipMemoryEntries RelationshipMemoryEntry[]
+  featureFlags           FeatureFlag[]
+  usageRecords           UsageRecord[]
+  deliverableUploads     DeliverableUpload[]
+  auditLogs              AuditLog[]
+  invitations            TenantInvitation[]
+
+  @@index([slug])
+  @@index([ownerWallet])
+}
+
+/// Junction table linking users to tenants with role-based access.
+/// A user can belong to multiple tenants with different roles.
+/// Roles are always tenant-scoped — never global (except isPlatformAdmin on User).
+model TenantUser {
+  id         String     @id @default(uuid())
+  tenantId   String
+  userId     String
+  role       TenantRole
+  /// Wallet address of the user who sent the invitation
+  invitedBy  String?
+  /// Null until the user accepts the invitation
+  acceptedAt DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// ============================================================
+// User Model
+// ============================================================
+
+/// Represents a unique user identified by their Sui wallet address.
+/// Authentication is via wallet signature challenge-response.
+model User {
+  id                 String    @id @default(uuid())
+  /// Unique Sui wallet address — the user's identity
+  walletAddress      String    @unique
+  /// Random nonce for wallet signature challenge-response authentication
+  nonce              String
+  displayName        String?
+  /// Email for receiving notifications (optional)
+  notificationEmail  String?
+  emailNotifications Boolean   @default(true)
+  /// Only set directly in DB, never via API. Bypasses all RBAC checks.
+  isPlatformAdmin    Boolean   @default(false)
+  compromisedAt      DateTime?
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  tenantMemberships TenantUser[]
+  refreshTokens     RefreshToken[]
+  refreshTokenFamilies RefreshTokenFamily[]
+  reputationProof   ReputationProof?
+  auditLogs          AuditLog[]
+
+  @@index([walletAddress])
+}
+
+// ============================================================
+// Core Business Models
+// ============================================================
+
+/// Mirrors the on-chain PaymentRelationship object.
+/// Tracks milestone-based escrow payments between payer and recipient.
+/// Can be personal (null tenantId) or tenant-scoped.
+model PaymentRelationship {
+  id                  String             @id @default(uuid())
+  /// On-chain Sui object ID of the PaymentRelationship
+  suiObjectId         String             @unique
+  clientRequestId     String?            @unique
+  /// Null for personal relationships, FK for tenant-scoped
+  tenantId            String?
+  /// Sui wallet address of the payer who funded the relationship
+  payerWallet         String
+  /// Sui wallet address of the recipient
+  recipientWallet     String
+  memo                String
+  milestoneCount      Int
+  /// Total USDC locked across all milestones — base units (6 decimals)
+  totalLockedAmount   BigInt
+  /// Walrus MemWal space ID for off-chain memory entries
+  walrusMemorySpaceId String
+  status              RelationshipStatus @default(ACTIVE)
+  contractVersion     Int                @default(2)
+  legacyReadOnly      Boolean            @default(false)
+  assetType           String             @default("")
+  assetSymbol         String             @default("USDC")
+  assetDecimals       Int                @default(6)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  tenant                Tenant?               @relation(fields: [tenantId], references: [id])
+  milestones            Milestone[]
+  agentActions          AgentAction[]
+  notifications         Notification[]
+  completionAttestations CompletionAttestation[]
+  submittedTransactions  SubmittedTransaction[]
+  deliverableUploads      DeliverableUpload[]
+  capabilities            RelationshipCapability[]
+  memoryEntries           RelationshipMemoryEntry[]
+
+  @@index([tenantId])
+  @@index([payerWallet])
+  @@index([recipientWallet])
+  @@index([suiObjectId])
+  @@index([status])
+}
+
+/// A single milestone within a PaymentRelationship.
+/// Tracks condition fulfilment, release, disputes, and deliverables.
+model Milestone {
+  id               String          @id @default(uuid())
+  relationshipId   String
+  /// Zero-based index of this milestone within the relationship
+  milestoneIndex   Int
+  /// USDC amount for this milestone — base units (6 decimals)
+  amount           BigInt
+  conditionType    ConditionType
+  /// Condition value (e.g., blob ID for deliverable, timestamp for time-gated)
+  conditionValue   String
+  releasePolicy    ReleasePolicy   @default(PAYER_APPROVAL)
+  status           MilestoneStatus @default(PENDING)
+  disputeStatus    DisputeStatus   @default(NONE)
+  /// Walrus blob ID of the registered deliverable
+  deliverableBlobId String?
+  verificationEvidenceHash String?
+  challengeDeadline DateTime?
+  conditionMetAt   DateTime?
+  releasedAt       DateTime?
+  disputeRaisedAt  DateTime?
+  disputeReasonHash String?
+  disputeWalrusBlobId String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  relationship PaymentRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+
+  @@unique([relationshipId, milestoneIndex])
+  @@index([relationshipId])
+  @@index([status])
+}
+
+/// Verifiable credential proving a milestone was completed and payment released.
+/// Mirrors the on-chain CompletionAttestation object.
+model CompletionAttestation {
+  id                  String   @id @default(uuid())
+  /// On-chain Sui object ID of the CompletionAttestation
+  suiObjectId         String   @unique
+  relationshipId      String
+  milestoneIndex      Int
+  payerWallet         String
+  recipientWallet     String
+  /// USDC amount released — base units (6 decimals)
+  amount              BigInt
+  conditionType       String
+  deliverableBlobId   String?
+  walrusMemorySpaceId String
+  completionTimestamp DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  relationship PaymentRelationship @relation(fields: [relationshipId], references: [id])
+
+  @@index([relationshipId])
+  @@index([recipientWallet])
+}
+
+/// Aggregated on-chain reputation score derived from CompletionAttestations.
+/// One proof per user (wallet address).
+model ReputationProof {
+  id                     String   @id @default(uuid())
+  /// On-chain Sui object ID of the ReputationProof
+  suiObjectId            String   @unique
+  /// Wallet address of the proof owner — one per user
+  ownerWallet            String   @unique
+  successfulCount        Int
+  disputedCount          Int
+  cancelledCount         Int      @default(0)
+  /// Total USDC volume across all attestations — base units (6 decimals)
+  totalVolume            BigInt
+  /// Completion rate in basis points (10000 = 100%)
+  completionRateBps      Int
+  /// Average completion time in milliseconds
+  avgCompletionTimeMs    BigInt
+  walrusAttestationSpaceId String
+  mintedAt               DateTime
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  owner User? @relation(fields: [ownerWallet], references: [walletAddress])
+
+  @@index([ownerWallet])
+}
+
+// ============================================================
+// Infrastructure Models
+// ============================================================
+
+/// Records every AI agent invocation for auditability.
+/// Permanently links AI decisions to the exact prompt version that produced them.
+model AgentAction {
+  id             String          @id @default(uuid())
+  relationshipId String?
+  tenantId       String?
+  correlationId  String?
+  actionType     AgentActionType
+  /// Input parameters and context provided to the AI
+  payload        Json
+  /// AI output/decision
+  result         Json
+  /// AI model identifier (e.g., "gemini-2.0-flash")
+  aiModel        String
+  /// Semver version from the PromptVersion table — links to exact prompt text
+  promptVersion  String
+  tokensUsed     Int?
+  inputTokens    Int?
+  outputTokens   Int?
+  /// Estimated cost in USD with 6 decimal places for cost tracking
+  estimatedCostUsd Decimal       @db.Decimal(18, 6)
+  /// Duration of the AI invocation in milliseconds
+  durationMs     Int
+  success        Boolean
+  errorMessage   String?
+  /// OpenTelemetry trace ID for correlating with distributed traces
+  traceId        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  relationship PaymentRelationship? @relation(fields: [relationshipId], references: [id])
+  tenant       Tenant?              @relation(fields: [tenantId], references: [id])
+
+  @@index([relationshipId])
+  @@index([tenantId])
+  @@index([correlationId])
+  @@index([actionType])
+  @@index([createdAt])
+}
+
+/// Deterministic, queryable relationship history derived from on-chain events.
+/// Walrus persistence is tracked independently so factual history remains visible
+/// while decentralized storage is pending or temporarily unavailable.
+model RelationshipMemoryEntry {
+  id              String   @id @default(uuid())
+  sourceEventId   String   @unique
+  relationshipId  String
+  tenantId        String?
+  eventType       String
+  summary         String
+  factualPayload  Json
+  milestoneIndex  Int?
+  actorWallet     String?
+  walrusBlobId    String?
+  storageStatus   String   @default("PENDING")
+  storageError    String?
+  byteSize        Int      @default(0)
+  occurredAt      DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  relationship PaymentRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  tenant       Tenant?             @relation(fields: [tenantId], references: [id])
+
+  @@index([relationshipId, occurredAt])
+  @@index([tenantId])
+  @@index([storageStatus])
+}
+
+/// Stores raw blockchain events from the Sui event watcher.
+/// The source of truth for event replay and re-indexing.
+model BlockchainEvent {
+  id              String    @id @default(uuid())
+  /// Unique Sui event ID for deduplication
+  suiEventId      String    @unique
+  eventType       String
+  packageId       String
+  sender          String
+  payload         Json
+  processed       Boolean   @default(false)
+  processedAt     DateTime?
+  processingError String?
+  retryCount      Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([processed, createdAt])
+  @@index([eventType])
+  @@index([suiEventId])
+}
+
+/// Tracks every PTB submitted to the Sui blockchain.
+/// Provides visibility into blockchain failure debugging.
+model SubmittedTransaction {
+  id             String            @id @default(uuid())
+  /// Sui transaction digest — unique identifier
+  digest         String            @unique
+  relationshipId String?
+  tenantId       String?
+  /// Wallet address that submitted the transaction
+  submittedBy    String
+  txType         TransactionType
+  status         TransactionStatus @default(PENDING)
+  /// Gas used in MIST (Sui base units)
+  gasUsed        BigInt?
+  submittedAt    DateTime
+  confirmedAt    DateTime?
+  error          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  relationship PaymentRelationship? @relation(fields: [relationshipId], references: [id])
+  tenant       Tenant?              @relation(fields: [tenantId], references: [id])
+
+  @@index([status])
+  @@index([txType])
+  @@index([submittedBy])
+  @@index([digest])
+}
+
+/// Email and push notifications sent to users.
+/// Created before sending (part of the outbox pattern).
+model Notification {
+  id               String           @id @default(uuid())
+  sourceOutboxEventId String?        @unique
+  recipientEmail   String
+  recipientWallet  String
+  tenantId         String?
+  relationshipId   String?
+  notificationType NotificationType
+  subject          String
+  bodyHtml         String
+  provider         EmailProvider
+  sent             Boolean          @default(false)
+  sentAt           DateTime?
+  readAt           DateTime?
+  error            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  tenant       Tenant?              @relation(fields: [tenantId], references: [id])
+  relationship PaymentRelationship? @relation(fields: [relationshipId], references: [id])
+
+  @@index([recipientWallet])
+  @@index([sent])
+  @@index([recipientWallet, readAt])
+  @@index([notificationType])
+}
+
+/// JWT refresh tokens for session management.
+/// Supports token rotation with reuse detection.
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  familyId  String
+  token     String    @unique
+  expiresAt DateTime
+  /// Set when the token is revoked (used or compromised)
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family RefreshTokenFamily @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+/// Groups rotated refresh tokens so reuse detection can revoke only the affected session family.
+model RefreshTokenFamily {
+  id             String    @id @default(uuid())
+  userId         String
+  compromisedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens RefreshToken[]
+
+  @@index([userId])
+  @@index([compromisedAt])
+}
+
+/// Idempotency keys for preventing duplicate request processing.
+/// TTL: 5 minutes. Cleaned up by the hourly scheduler.
+model IdempotencyKey {
+  id        String   @id @default(uuid())
+  /// SHA-256 hash of sorted request parameters
+  key       String   @unique
+  /// Cached response JSON
+  response  Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@index([expiresAt])
+}
+
+/// Transactional outbox for guaranteed notification delivery.
+/// State changes and outbox inserts happen in the same ACID transaction.
+/// The OutboxWorker polls this table to dispatch notifications.
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  /// ID of the entity that changed (e.g., relationship ID, milestone ID)
+  aggregateId   String
+  /// Type of entity (e.g., "PaymentRelationship", "Milestone")
+  aggregateType String
+  eventType     String
+  payload       Json
+  published     Boolean   @default(false)
+  publishedAt   DateTime?
+  attemptCount  Int       @default(0)
+  lastAttemptAt DateTime?
+  lockedUntil   DateTime?
+  error         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([published, createdAt])
+  @@index([attemptCount])
+  @@index([lockedUntil])
+}
+
+/// Webhook replay attack prevention.
+/// Stores HMAC signatures to prevent duplicate processing.
+/// Cleaned up after 24 hours by the hourly scheduler.
+model WebhookDelivery {
+  id                String   @id @default(uuid())
+  /// HMAC-SHA256 signature from the request header
+  signature         String   @unique
+  transactionDigest String
+  receivedAt        DateTime
+  processedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([signature])
+  @@index([createdAt])
+}
+
+/// Tenant-overridable feature flags for controlling AI and automation behavior.
+/// Null tenantId means platform-wide default.
+model FeatureFlag {
+  id          String   @id @default(uuid())
+  key         String
+  enabled     Boolean
+  /// Null = platform-wide default; set = tenant-specific override
+  tenantId    String?
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@unique([key, tenantId])
+  @@index([key])
+}
+
+/// Versioned AI prompts — the source of truth for all AI agent prompts.
+/// Prompts are NEVER hardcoded in source files. Hot-swappable without deployment.
+model PromptVersion {
+  id          String    @id @default(uuid())
+  /// Prompt identifier (e.g., "anomaly-detection")
+  promptKey   String
+  /// Semver version (e.g., "1.0.0")
+  version     String
+  /// The full prompt text
+  content     String
+  isActive    Boolean   @default(false)
+  activatedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([promptKey, version])
+  @@index([promptKey, isActive])
+}
+
+/// Tracks resource consumption for billing and cost analysis.
+model UsageRecord {
+  id              String       @id @default(uuid())
+  walletAddress   String
+  tenantId        String?
+  relationshipId  String?
+  resourceType    ResourceType
+  quantity        BigInt
+  model           String?
+  /// Estimated cost in USD with 6 decimal places
+  estimatedCostUsd Decimal     @db.Decimal(18, 6)
+  recordedAt      DateTime
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([walletAddress])
+  @@index([tenantId])
+  @@index([resourceType])
+  @@index([recordedAt])
+}
+
+/// Daily usage rollup for fast tenant/admin dashboards.
+model UsageAggregation {
+  id              String       @id @default(uuid())
+  walletAddress   String
+  tenantId        String       @default("")
+  resourceType    ResourceType
+  bucketDate      DateTime
+  quantity        BigInt
+  estimatedCostUsd Decimal    @db.Decimal(18, 6)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([walletAddress, tenantId, resourceType, bucketDate])
+  @@index([tenantId, bucketDate])
+  @@index([resourceType, bucketDate])
+}
+
+/// Tracks uploaded deliverable files with content validation metadata.
+model DeliverableUpload {
+  id             String     @id @default(uuid())
+  uploaderWallet String
+  tenantId       String?
+  /// Walrus blob ID — unique content identifier
+  walrusBlobId   String     @unique
+  contentType    String
+  /// File size in bytes
+  sizeBytes      BigInt
+  /// SHA-256 hash of the file content (hex-encoded) for deduplication
+  sha256Hash     String
+  mimeValidated  Boolean
+  scanStatus     ScanStatus @default(PENDING)
+  verificationStatus DeliverableVerificationStatus @default(UPLOADED)
+  relationshipId String?
+  milestoneIndex Int?
+  verificationConfidence Int?
+  verificationReason String?
+  verificationEvidenceHash String?
+  verifiedAt DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  relationship PaymentRelationship? @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+
+  @@index([sha256Hash])
+  @@index([uploaderWallet])
+  @@index([scanStatus])
+  @@index([relationshipId, milestoneIndex])
+}
+
+model RelationshipCapability {
+  id             String   @id @default(uuid())
+  suiObjectId    String   @unique
+  relationshipId String
+  capabilityType String
+  holderWallet   String
+  expiresAt      DateTime
+  permissions    Json
+  revokedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  relationship PaymentRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+
+  @@index([relationshipId])
+  @@index([holderWallet])
+  @@index([capabilityType])
+}
+
+/// Pending tenant invitation with a hashed accept token.
+model TenantInvitation {
+  id             String     @id @default(uuid())
+  tenantId       String
+  invitedUserId  String
+  invitedEmail   String?
+  invitedBy      String
+  role           TenantRole
+  tokenHash      String     @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  declinedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([invitedUserId])
+  @@index([expiresAt])
+}
+
+/// Security and operational audit log for financial-platform investigations.
+model AuditLog {
+  id            String      @id @default(uuid())
+  tenantId      String?
+  actorUserId   String?
+  actorWallet   String?
+  action        AuditAction
+  targetType    String
+  targetId      String
+  before        Json?
+  after         Json?
+  metadata      Json?
+  correlationId String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  actor  User?   @relation(fields: [actorUserId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([actorWallet])
+  @@index([action])
+  @@index([targetType, targetId])
+}
+
+/// Singleton row storing the Sui GraphQL cursor for event watcher recovery.
+/// Upserted on every event batch to persist polling position across restarts.
+model WatcherState {
+  /// Fixed value "singleton" — only one row ever exists
+  id              String    @id @default("singleton")
+  lastCursor      String?
+  lastProcessedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// ============================================================
+// Archive Tables — same schema as originals, for data retention
+// ============================================================
+
+/// Archived blockchain events older than BLOCKCHAIN_EVENT_RETENTION_DAYS.
+model BlockchainEventArchive {
+  id              String    @id @default(uuid())
+  suiEventId      String    @unique
+  eventType       String
+  packageId       String
+  sender          String
+  payload         Json
+  processed       Boolean
+  processedAt     DateTime?
+  processingError String?
+  retryCount      Int
+  originalCreatedAt DateTime
+  archivedAt      DateTime  @default(now())
+
+  @@index([suiEventId])
+  @@index([eventType])
+}
+
+/// Archived agent actions older than AGENT_ACTION_RETENTION_DAYS.
+model AgentActionArchive {
+  id             String          @id @default(uuid())
+  relationshipId String?
+  tenantId       String?
+  actionType     AgentActionType
+  payload        Json
+  result         Json
+  aiModel        String
+  promptVersion  String
+  tokensUsed     Int?
+  inputTokens    Int?
+  outputTokens   Int?
+  estimatedCostUsd Decimal       @db.Decimal(18, 6)
+  durationMs     Int
+  success        Boolean
+  errorMessage   String?
+  traceId        String?
+  originalCreatedAt DateTime
+  archivedAt     DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([actionType])
+  @@index([originalCreatedAt])
+}

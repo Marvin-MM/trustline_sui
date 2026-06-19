@@ -1,0 +1,16 @@
+{
+  "name": "bondflow",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter apps/agent dev",
+    "build": "bun run --filter apps/agent build",
+    "seed": "bun run --filter apps/agent seed",
+    "reindex": "bun run --filter apps/agent reindex",
+    "migrate": "bun run --filter apps/agent migrate"
+  }
+}

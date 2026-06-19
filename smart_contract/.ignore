@@ -1,0 +1,3 @@
+# Keep local search focused on source and tests.
+build/
+coverage/

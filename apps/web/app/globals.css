@@ -1,0 +1,238 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Design Tokens — BondFlow Brand System
+   ============================================================ */
+
+@layer base {
+  :root {
+    --font-inter: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-jetbrains-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+    /* Brand */
+    --brand: 263 70% 50%;
+    --brand-foreground: 0 0% 100%;
+    --brand-muted: 263 70% 96%;
+
+    /* Background & Surface */
+    --background: 0 0% 100%;
+    --foreground: 224 71% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+
+    /* Primary (maps to brand violet) */
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 71% 4%;
+
+    /* Muted */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Accent */
+    --accent: 220 14% 96%;
+    --accent-foreground: 224 71% 4%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 263 70% 50%;
+
+    /* Status colours */
+    --status-pending: 45 93% 47%;
+    --status-active: 217 91% 60%;
+    --status-released: 160 84% 39%;
+    --status-cancelled: 240 5% 65%;
+    --status-disputed: 346 87% 43%;
+    --status-condition-met: 199 89% 48%;
+
+    /* Semantic UI tokens */
+    --color-success: 160 84% 39%;
+    --color-warning: 45 93% 47%;
+    --color-danger: 346 87% 43%;
+    --color-info: 199 89% 48%;
+    --surface-primary: 0 0% 100%;
+    --surface-secondary: 220 14% 96%;
+    --text-primary: 224 71% 4%;
+    --text-secondary: 220 9% 46%;
+    --border-default: 220 13% 91%;
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 224 71% 4%;
+    --sidebar-primary: 263 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 224 71% 4%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 263 70% 50%;
+  }
+
+  .dark {
+    /* Brand */
+    --brand: 263 70% 60%;
+    --brand-foreground: 0 0% 100%;
+    --brand-muted: 263 40% 15%;
+
+    /* Background & Surface */
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 7%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 7%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary */
+    --primary: 263 70% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Accent */
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Destructive */
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders & Inputs */
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 263 70% 60%;
+
+    /* Status colours — same hue, adjusted for dark */
+    --status-pending: 45 93% 47%;
+    --status-active: 217 91% 60%;
+    --status-released: 160 84% 39%;
+    --status-cancelled: 240 5% 65%;
+    --status-disputed: 346 87% 43%;
+    --status-condition-met: 199 89% 48%;
+
+    /* Semantic UI tokens */
+    --color-success: 160 84% 39%;
+    --color-warning: 45 93% 47%;
+    --color-danger: 346 87% 43%;
+    --color-info: 199 89% 48%;
+    --surface-primary: 222 47% 7%;
+    --surface-secondary: 217 33% 17%;
+    --text-primary: 210 40% 98%;
+    --text-secondary: 215 20% 65%;
+    --border-default: 217 33% 17%;
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 7%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 263 70% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 263 70% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+@layer utilities {
+  /* Glass morphism surfaces */
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dark .glass {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* Brand gradient */
+  .gradient-brand {
+    background: linear-gradient(135deg, hsl(var(--brand)) 0%, hsl(243 75% 59%) 100%);
+  }
+
+  /* Subtle grid background */
+  .bg-grid {
+    background-image: linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Shimmer loading state */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Monospace utility */
+  .font-mono-num {
+    font-family: var(--font-jetbrains-mono), 'JetBrains Mono', 'Fira Code', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
