@@ -2,12 +2,20 @@
  * Distributed lock service using Redlock algorithm.
  */
 
-import Redlock, { type Lock } from 'redlock';
+import Redlock, { ResourceLockedError, type Lock } from 'redlock';
 import { redis } from './redis-client';
 import { logger } from './logger';
 import { tracer, SpanStatusCode } from '../tracing';
 
 const lockLogger = logger.child({ module: 'distributed-lock' });
+type RedlockAbortSignal = AbortSignal & { error?: Error };
+type AutoExtendingRedlock = Redlock & {
+  using<T>(
+    resources: string[],
+    duration: number,
+    routine: (signal: RedlockAbortSignal) => Promise<T>,
+  ): Promise<T>;
+};
 
 const redlock = new Redlock([redis], {
   retryCount: 3,
@@ -17,7 +25,9 @@ const redlock = new Redlock([redis], {
 });
 
 redlock.on('error', (error: Error) => {
-  if (String(error?.message).includes('exceeded')) {
+  if (error instanceof ResourceLockedError) {
+    lockLogger.debug({ error: String(error.message) }, 'Redlock resource already locked');
+  } else if (String(error?.message).includes('exceeded')) {
     lockLogger.debug({ error: String(error.message) }, 'Lock acquisition timeout');
   } else {
     lockLogger.error({ error: String(error.message) }, 'Redlock error');
@@ -47,11 +57,15 @@ export class RedlockService {
     const span = tracer.startSpan('redlock.withLock', {
       attributes: { 'bondflow.lock.resource': resource },
     });
-    let lock: Lock | null = null;
     try {
-      lock = await redlock.acquire([resource], ttl);
-      lockLogger.debug({ resource }, 'Lock acquired for withLock');
-      const result = await fn();
+      const result = await (redlock as AutoExtendingRedlock).using([resource], ttl, async (signal) => {
+        lockLogger.debug({ resource }, 'Lock acquired for withLock');
+        const value = await fn();
+        if (signal.aborted) {
+          throw signal.error ?? new Error('Distributed lock was lost before work completed');
+        }
+        return value;
+      });
       span.setStatus({ code: SpanStatusCode.OK });
       return result;
     } catch (error) {
@@ -59,9 +73,6 @@ export class RedlockService {
       span.setStatus({ code: SpanStatusCode.ERROR });
       throw error;
     } finally {
-      if (lock) {
-        try { await lock.release(); } catch { /* already expired */ }
-      }
       span.end();
     }
   }

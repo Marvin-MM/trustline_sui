@@ -202,7 +202,7 @@ export function AdminPageClient({ tenantSlug, initialTab = 'Overview' }: { tenan
             <div className="space-y-3">
               {(prompts ?? []).map((p, i) => (
                 <motion.div
-                  key={p.key}
+                  key={p.id ?? `${p.key}:${p.version}`}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}

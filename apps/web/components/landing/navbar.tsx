@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Zap, Menu, X, Sun, Moon, Github } from 'lucide-react';
@@ -57,17 +58,15 @@ export function Navbar() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6">
         {/* Logo */}
-        <Link href="/" className="group flex items-center gap-2">
-          <motion.div
-            className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand shadow-lg shadow-brand/20 transition-all group-hover:shadow-brand/40"
-            whileHover={{ scale: 1.08, rotate: 10 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Zap className="h-5 w-5 text-white" />
-          </motion.div>
-          <span className="text-xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
-            BondFlow
-          </span>
+        <Link href="/" className="group flex items-center">
+          <Image 
+            src="/logos/trustline-logo.png" 
+            alt="Trustline Logo" 
+            width={160} 
+            height={36} 
+            className="object-contain" 
+            priority
+          />
         </Link>
 
         {/* Desktop Navigation */}

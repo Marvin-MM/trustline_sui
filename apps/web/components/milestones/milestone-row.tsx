@@ -32,6 +32,7 @@ interface MilestoneRowProps {
   onRelease?: (index: number) => void;
   onRaiseDispute?: (index: number) => void;
   onUploadDeliverable?: (index: number) => void;
+  onRetryVerification?: (index: number) => void;
   onResolveDispute?: (index: number, resolution: 2 | 3) => void;
   latestAiAction?: {
     actionType: string;
@@ -55,6 +56,7 @@ export function MilestoneRow({
   onRelease,
   onRaiseDispute,
   onUploadDeliverable,
+  onRetryVerification,
   onResolveDispute,
   latestAiAction,
 }: MilestoneRowProps) {
@@ -68,13 +70,17 @@ export function MilestoneRow({
   const uploadLabel = milestone.deliverable?.verificationStatus === 'UPLOADED'
     ? 'Continue submission'
     : milestone.deliverable && ['REJECTED', 'FAILED'].includes(milestone.deliverable.verificationStatus)
-      ? 'Retry upload'
+      ? milestone.status === MilestoneStatus.PENDING ? 'Submit proof again' : 'Retry upload'
       : 'Upload proof';
   const verificationLabel = milestone.deliverable?.verificationStatus === 'UPLOADED'
     ? 'Uploaded to Walrus; submit on-chain to start verification'
     : milestone.deliverable?.verificationStatus
       ? `Verification: ${milestone.deliverable.verificationStatus.replaceAll('_', ' ')}`
       : null;
+  const verificationNote = milestone.deliverable?.reason?.includes('abort code: 1004')
+    && milestone.status === MilestoneStatus.PENDING
+    ? 'Submit this proof on-chain again before AI verification can run.'
+    : milestone.deliverable?.reason;
   const challengeDeadlineMs = milestone.challengeDeadline ? new Date(milestone.challengeDeadline).getTime() : null;
   const isChallengeWindowOpen = milestone.releasePolicy === ReleasePolicy.AUTO_AFTER_CHALLENGE
     && milestone.status === MilestoneStatus.CONDITION_MET
@@ -210,6 +216,14 @@ export function MilestoneRow({
                 </TooltipPrimitive.Root>
               </TooltipPrimitive.Provider>
             )}
+            {milestone.deliverable?.verificationStatus === 'FAILED' && milestone.status === MilestoneStatus.SUBMITTED && (
+              <button
+                onClick={() => onRetryVerification?.(index)}
+                className="rounded-lg bg-brand/10 px-3 py-1.5 text-xs font-medium text-brand transition-colors hover:bg-brand/20"
+              >
+                Retry verification
+              </button>
+            )}
 
             {/* Release button */}
             {canRelease && (
@@ -282,10 +296,10 @@ export function MilestoneRow({
                 <span className="font-mono-num text-xs text-foreground">{milestone.walrusBlobId}</span>
               </div>
             )}
-            {milestone.deliverable?.reason && (
+            {verificationNote && (
               <div className="flex items-start gap-2">
                 <span className="text-xs text-muted-foreground">Verification note:</span>
-                <span className="text-xs text-foreground">{milestone.deliverable.reason}</span>
+                <span className="text-xs text-foreground">{verificationNote}</span>
               </div>
             )}
             <div className="flex items-center gap-2">

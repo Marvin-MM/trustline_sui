@@ -14,7 +14,7 @@ import { walrusService } from '../services/walrus';
 import { env } from '../config/env';
 import { agentAddress, suiClient } from '../lib/sui-client';
 import { detectAnomaly } from '../agents/core-functions';
-import { parseHumanAmount, paymentAsset } from '../lib/payment-asset';
+import { formatHumanAmount, parseHumanAmount, paymentAsset } from '../lib/payment-asset';
 import { canonicalWalletAddress } from '../lib/wallet-signature';
 
 function ptbResponse(result: {
@@ -125,12 +125,26 @@ export const relationshipRoutes = new Elysia({ prefix: '/api/v1/relationships' }
       set.status = 422;
       return { error: 'Invalid milestone configuration', code: 'VALIDATION_FAILED', details: validation.error.flatten() };
     }
+    const totalBaseUnits = body.milestones.reduce((sum, milestone) => sum + parseHumanAmount(milestone.amount), 0n);
     const result = await detectAnomaly({
       transactionData: JSON.stringify({
         recipientWallet: body.recipientWallet,
-        total: body.milestones.reduce((sum, milestone) => sum + parseHumanAmount(milestone.amount), 0n).toString(),
-        asset: paymentAsset.symbol,
-        milestones: body.milestones,
+        asset: {
+          symbol: paymentAsset.symbol,
+          decimals: paymentAsset.decimals,
+        },
+        totalHuman: `${formatHumanAmount(totalBaseUnits)} ${paymentAsset.symbol}`,
+        totalBaseUnits: totalBaseUnits.toString(),
+        milestones: body.milestones.map((milestone) => {
+          const amountBaseUnits = parseHumanAmount(milestone.amount);
+          return {
+            amountHuman: `${milestone.amount} ${paymentAsset.symbol}`,
+            amountBaseUnits: amountBaseUnits.toString(),
+            conditionType: milestone.conditionType,
+            conditionValue: milestone.conditionValue,
+            releasePolicy: milestone.releasePolicy ?? 'PAYER_APPROVAL',
+          };
+        }),
       }),
       historicalContext: 'Preflight only. No relationship, Walrus space, or transaction has been created.',
     }, {

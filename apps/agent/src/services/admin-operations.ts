@@ -108,8 +108,22 @@ export class AdminOperationsService {
     return { key, enabled };
   }
 
-  listPrompts() {
-    return prisma.promptVersion.findMany({ orderBy: [{ promptKey: 'asc' }, { createdAt: 'desc' }] });
+  async listPrompts() {
+    const prompts = await prisma.promptVersion.findMany({
+      where: { isActive: true },
+      orderBy: [
+        { promptKey: 'asc' },
+        { activatedAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
+    });
+    const byKey = new Map<string, (typeof prompts)[number]>();
+    for (const prompt of prompts) {
+      if (!byKey.has(prompt.promptKey)) {
+        byKey.set(prompt.promptKey, prompt);
+      }
+    }
+    return Array.from(byKey.values());
   }
 
   async createPrompt(actor: AdminActor, body: { promptKey: string; version: string; content: string }) {

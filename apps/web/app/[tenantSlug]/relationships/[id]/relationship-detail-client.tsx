@@ -237,6 +237,42 @@ export function RelationshipDetailClient({
     void releaseSigner.prepare();
   };
 
+  const handleRetryVerification = async (milestoneIndex: number) => {
+    if (!relationship) {
+      toast.error('Relationship is still loading.');
+      return;
+    }
+    const milestone = relationship.milestones[milestoneIndex];
+    if (milestone?.status !== MilestoneStatus.SUBMITTED) {
+      toast.info('Submit the proof on-chain before retrying AI verification.');
+      return;
+    }
+    const deliverable = relationship.milestones[milestoneIndex]?.deliverable;
+    if (!deliverable) {
+      toast.error('No deliverable found for this milestone.');
+      return;
+    }
+    try {
+      const queued = await deliverablesApi.queueVerification({
+        relationshipId,
+        milestoneIndex,
+        blobId: deliverable.blobId,
+        retry: true,
+      });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.relationships.detail(relationshipId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.agentActions.byRelationship(relationshipId, 1) });
+      if (queued.verificationStatus === 'SCANNING') {
+        toast.success('Verification retry queued.');
+      } else if (queued.verificationStatus === 'FAILED') {
+        toast.warning(queued.message);
+      } else {
+        toast.info(`Verification is ${queued.verificationStatus.toLowerCase()}.`);
+      }
+    } catch (error) {
+      toast.error(`Verification retry failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+    }
+  };
+
   const handleCancelConfirmed = () => {
     setPendingCancelConfirm(false);
     setPtbModalOpen(true);
@@ -457,11 +493,15 @@ export function RelationshipDetailClient({
                 onRaiseDispute={(idx) => setDisputeMilestoneIndex(idx)}
                 onUploadDeliverable={(idx) => {
                   setUploadMilestoneIndex(idx);
-                  const existingUpload = relationship.milestones[idx]?.deliverable;
-                  setPendingBlobId(existingUpload?.verificationStatus === 'UPLOADED'
+                  const milestone = relationship.milestones[idx];
+                  const existingUpload = milestone?.deliverable;
+                  setPendingBlobId(existingUpload
+                    && milestone.status === MilestoneStatus.PENDING
+                    && ['UPLOADED', 'FAILED', 'REJECTED'].includes(existingUpload.verificationStatus)
                     ? existingUpload.blobId
                     : null);
                 }}
+                onRetryVerification={handleRetryVerification}
                 onResolveDispute={(index, resolution) => {
                   pendingResolutionRef.current = { index, resolution };
                   setPendingResolution({ index, resolution });

@@ -1,52 +1,52 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Cpu, Database, Flame, HardDrive, Layout, ShieldAlert } from 'lucide-react';
+import { Cpu, Database, Flame, HardDrive } from 'lucide-react';
 
 const TECHS = [
   {
     name: 'Sui Blockchain',
-    role: 'Escrow & Identity',
+    role: 'Shared Objects & Attestations',
     description:
-      'Sui provides sub-second transaction speeds and atomic execution of complex multi-sig milestones. We use Sui smart contracts to secure client deposits, and mint soulbound reputation attestations directly on-chain.',
+      'BondFlow uses Sui shared objects to hold USDC-funded payment relationships, enforce milestone state transitions, emit indexable events, and mint CompletionAttestation and ReputationProof objects.',
     icon: Flame,
     color: 'text-blue-400',
     borderColor: 'border-blue-500/10 hover:border-blue-500/30',
     glowColor: 'bg-blue-500/5',
-    bullets: ['Sub-second latency', 'Soulbound NFTs', 'Programmable transaction blocks'],
+    bullets: ['Shared object lifecycle', 'Programmable transaction blocks', 'Completion attestations'],
   },
   {
     name: 'Walrus Protocol',
-    role: 'Decentralized Storage',
+    role: 'Deliverables & Evidence',
     description:
-      'Unlike central databases, BondFlow relationship history and documents are encrypted and uploaded to Walrus. This ensures relationship history is permanent, verifiable, and cannot be deleted or manipulated by any party.',
+      'Deliverables, dispute evidence, and canonical memory payloads live on Walrus. The smart contract stores compact hashes and blob references while the app preserves previewable evidence.',
     icon: HardDrive,
     color: 'text-purple-400',
     borderColor: 'border-purple-500/10 hover:border-purple-500/30',
     glowColor: 'bg-purple-500/5',
-    bullets: ['Immutable archives', 'Cost-effective storage node redundancy', 'Verifiable storage attestations'],
+    bullets: ['Permanent proof blobs', 'Evidence hashes', 'Previewable deliverables'],
   },
   {
-    name: 'Gemini AI Integration',
-    role: 'Autonomous Auditing',
+    name: 'AI Verification Agents',
+    role: 'Auditable Decisions',
     description:
-      'Gemini-powered agents read the encrypted deliverables and relationship history. They audit milestones, flag security anomalies, and verify submission requirements to ensure contract criteria are fully satisfied.',
+      'AI agents run explicit anomaly and deliverable-verification workflows. They do not secretly move funds; they produce auditable evidence that payer/operator actions and optional automation can rely on.',
     icon: Cpu,
     color: 'text-amber-400',
     borderColor: 'border-amber-500/10 hover:border-amber-500/30',
     glowColor: 'bg-amber-500/5',
-    bullets: ['Milestone validation logic', 'Confidence metrics', 'Cryptographic verification logs'],
+    bullets: ['Prompt governance', 'Confidence and reasoning', 'Failure states'],
   },
   {
-    name: 'Next.js & React Core',
-    role: 'App Framework',
+    name: 'Walrus Memory',
+    role: 'Relationship Recall',
     description:
-      'A blazing-fast frontend built with modern React. Next-generation server routing, theme optimization, and responsive design systems ensure a seamless, high-performance workspace environment.',
-    icon: Layout,
+      'Factual relationship memory is written as canonical JSON and optionally indexed for semantic recall. The timeline remains available from indexed records even when semantic AI search is unavailable.',
+    icon: Database,
     color: 'text-slate-400',
     borderColor: 'border-slate-500/10 hover:border-slate-500/30',
     glowColor: 'bg-slate-500/5',
-    bullets: ['Dynamic hydration loading', 'Responsive CSS viewport grid', 'Optimal client state caching'],
+    bullets: ['Canonical JSON memory', 'Optional semantic Ask AI', 'Indexing recovery states'],
   },
 ];
 

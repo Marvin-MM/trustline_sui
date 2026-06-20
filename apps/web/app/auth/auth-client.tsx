@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Wallet, 
@@ -77,15 +78,15 @@ export function AuthPageClient() {
         <div className="pointer-events-none absolute -top-48 -left-48 h-[500px] w-[500px] rounded-full bg-blue-500/10 blur-[130px]" />
 
         {/* Top Header Logo */}
-        <Link href="/" className="group relative z-10 flex items-center gap-2.5">
-          <motion.div
-            className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand shadow-lg shadow-brand/20 transition-all group-hover:shadow-brand/40"
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Zap className="h-5 w-5 text-white" />
-          </motion.div>
-          <span className="text-xl font-bold tracking-tight text-white">BondFlow</span>
+        <Link href="/" className="group relative z-10 flex items-center">
+          <Image 
+            src="/logos/trustline-logo.png" 
+            alt="Trustline Logo" 
+            width={140} 
+            height={32} 
+            className="object-contain" 
+            priority
+          />
         </Link>
 
         {/* Middle: Graphics & Explainer */}
@@ -217,11 +218,15 @@ export function AuthPageClient() {
           className="w-full max-w-md"
         >
           {/* Mobile logo header (shows only on small screens) */}
-          <Link href="/" className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-brand text-white shadow-sm">
-              <Zap className="h-4 w-4" />
-            </div>
-            <span className="text-lg font-bold text-foreground">BondFlow</span>
+          <Link href="/" className="flex items-center mb-8 lg:hidden">
+            <Image 
+              src="/logos/trustline-logo.png" 
+              alt="Trustline Logo" 
+              width={140} 
+              height={32} 
+              className="object-contain" 
+              priority
+            />
           </Link>
 
           {/* Authenticator Card */}

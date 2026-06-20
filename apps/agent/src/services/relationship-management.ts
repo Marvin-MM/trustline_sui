@@ -18,6 +18,7 @@ import { auditFetchDepth, paginateAuditEntries } from '../lib/audit-pagination';
 import { canonicalWalletAddress } from '../lib/wallet-signature';
 
 const PENDING_RELATIONSHIP_STATUSES = ['PENDING_ON_CHAIN', 'FAILED_ON_CHAIN'] as const;
+const VERIFICATION_STALE_MS = 10 * 60 * 1000;
 
 function walletsEqual(left: string, right: string): boolean {
   return canonicalWalletAddress(left) === canonicalWalletAddress(right);
@@ -55,6 +56,43 @@ export interface RelationshipActor {
 }
 
 export class RelationshipManagementService {
+  private async failStaleVerificationUploads(rel: {
+    id: string;
+    deliverableUploads: Array<{
+      id: string;
+      verificationStatus: string;
+      verificationReason: string | null;
+      verificationConfidence: number | null;
+      updatedAt: Date;
+    }>;
+  }) {
+    const staleUploads = rel.deliverableUploads.filter((upload) =>
+      upload.verificationStatus === 'SCANNING'
+      && Date.now() - upload.updatedAt.getTime() >= VERIFICATION_STALE_MS);
+    if (staleUploads.length === 0) return;
+
+    const reason = env.START_WORKERS
+      ? 'Verification worker did not complete in time. Retry verification or check the AI pipeline queue.'
+      : 'AI verification worker is disabled (START_WORKERS=false). Enable workers and retry verification.';
+
+    await prisma.deliverableUpload.updateMany({
+      where: { id: { in: staleUploads.map((upload) => upload.id) } },
+      data: {
+        verificationStatus: 'FAILED',
+        verificationConfidence: 0,
+        verificationReason: reason,
+      },
+    });
+
+    for (const upload of rel.deliverableUploads) {
+      if (staleUploads.some((stale) => stale.id === upload.id)) {
+        upload.verificationStatus = 'FAILED';
+        upload.verificationConfidence = 0;
+        upload.verificationReason = reason;
+      }
+    }
+  }
+
   async ensurePendingRelationshipStatusesReady() {
     const rows = await prisma.$queryRaw<Array<{ enumlabel: string }>>`
       SELECT e.enumlabel
@@ -305,6 +343,7 @@ export class RelationshipManagementService {
   async getRelationship(actor: RelationshipActor, tenantId: string | null, suiObjectId: string) {
     const rel = await this.findScoped(suiObjectId, tenantId, actor.walletAddress);
     if (!rel) return null;
+    await this.failStaleVerificationUploads(rel);
     const activeOperatorCap = rel.capabilities.find((cap) =>
       cap.capabilityType === 'OPERATOR'
       && walletsEqual(cap.holderWallet, actor.walletAddress)
@@ -412,6 +451,12 @@ export class RelationshipManagementService {
       return {
         unavailable: true as const,
         message: 'This v1 relationship is read-only and cannot perform v2 lifecycle actions.',
+      };
+    }
+    if (rel.status !== 'ACTIVE') {
+      return {
+        unavailable: true as const,
+        message: 'This relationship is not active on-chain yet. Complete setup or wait for indexing before performing lifecycle actions.',
       };
     }
     try {
@@ -782,13 +827,23 @@ export class RelationshipManagementService {
       prisma.submittedTransaction.count({ where: { relationshipId: rel.id } }),
     ]);
 
+    const summarizeAuditLog = (event: (typeof auditLogs)[number]) => {
+      const metadata = (event.metadata as Record<string, unknown> | null) ?? {};
+      if (event.action === 'RELATIONSHIP_CREATED') {
+        if (metadata.phase === 'pending_on_chain') return 'RELATIONSHIP SETUP PREPARED';
+        if (metadata.phase === 'failed_before_chain_submission') return 'RELATIONSHIP SETUP FAILED';
+        if (metadata.phase === 'confirmed_on_chain') return 'RELATIONSHIP CREATED ON CHAIN';
+      }
+      return event.action.replaceAll('_', ' ');
+    };
+
     const entries = [
       ...auditLogs.map((event) => ({
         id: event.id,
         type: 'audit',
         timestamp: event.createdAt,
         actor: event.actorWallet ?? event.actorUserId ?? 'system',
-        summary: event.action.replaceAll('_', ' '),
+        summary: summarizeAuditLog(event),
         metadata: { targetType: event.targetType, targetId: event.targetId, before: event.before, after: event.after, ...((event.metadata as Record<string, unknown> | null) ?? {}) },
       })),
       ...agentActions.map((event) => ({

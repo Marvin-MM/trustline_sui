@@ -6,6 +6,7 @@ import { featureFlagService } from './feature-flags';
 import { FEATURE_FLAG_KEYS } from '@bondflow/types';
 
 const deliverableLogger = logger.child({ module: 'deliverable-management' });
+const VERIFICATION_STALE_MS = 10 * 60 * 1000;
 
 function buildWalrusBlobUrl(blobId: string): string {
   return `${env.WALRUS_AGGREGATOR_URL.replace(/\/$/, '')}/v1/blobs/${encodeURIComponent(blobId)}`;
@@ -43,6 +44,29 @@ async function enqueueAiPipelineJob(name: string, payload: AiPipelineJobPayload)
 }
 
 export class DeliverableManagementService {
+  private async markStaleVerificationFailed(upload: {
+    id: string;
+    verificationStatus: string;
+    verificationReason: string | null;
+    updatedAt: Date;
+  }) {
+    if (
+      upload.verificationStatus !== 'SCANNING'
+      || Date.now() - upload.updatedAt.getTime() < VERIFICATION_STALE_MS
+    ) {
+      return upload;
+    }
+
+    return prisma.deliverableUpload.update({
+      where: { id: upload.id },
+      data: {
+        verificationStatus: 'FAILED',
+        verificationConfidence: 0,
+        verificationReason: 'Verification worker did not complete in time. Check START_WORKERS/Redis/AI settings, then retry verification.',
+      },
+    });
+  }
+
   async validateAndReadUpload(request: Request): Promise<
     | { error: string; status: number }
     | { buffer: Buffer; detectedMime: string; relationshipId: string; milestoneIndex: number }
@@ -205,23 +229,33 @@ export class DeliverableManagementService {
     });
     if (!rel || !upload) return { notFound: true as const };
     const milestone = rel.milestones[0];
-    if (!milestone || !['SUBMITTED', 'PENDING'].includes(milestone.status)) {
+    if (!milestone) {
       return { invalidState: true as const, message: 'Milestone is not awaiting deliverable verification.' };
     }
-
-    if (['SCANNING', 'VERIFIED', 'REJECTED'].includes(upload.verificationStatus)) {
+    if (milestone.status !== 'SUBMITTED') {
       return {
-        jobId: null,
-        verificationStatus: upload.verificationStatus,
-        message: `Verification is already ${upload.verificationStatus.toLowerCase()}.`,
+        invalidState: true as const,
+        message: milestone.status === 'PENDING'
+          ? 'Submit the proof on-chain before starting AI verification.'
+          : `Milestone is ${milestone.status}; it is not awaiting deliverable verification.`,
       };
     }
 
-    if (upload.verificationStatus === 'FAILED' && !body.retry) {
+    const currentUpload = await this.markStaleVerificationFailed(upload);
+
+    if (['SCANNING', 'VERIFIED', 'REJECTED'].includes(currentUpload.verificationStatus)) {
       return {
         jobId: null,
-        verificationStatus: upload.verificationStatus,
-        message: upload.verificationReason ?? 'Verification previously failed. Retry explicitly to run it again.',
+        verificationStatus: currentUpload.verificationStatus,
+        message: `Verification is already ${currentUpload.verificationStatus.toLowerCase()}.`,
+      };
+    }
+
+    if (currentUpload.verificationStatus === 'FAILED' && !body.retry) {
+      return {
+        jobId: null,
+        verificationStatus: currentUpload.verificationStatus,
+        message: currentUpload.verificationReason ?? 'Verification previously failed. Retry explicitly to run it again.',
       };
     }
 
@@ -245,21 +279,51 @@ export class DeliverableManagementService {
       };
     }
 
-    await prisma.deliverableUpload.update({
-      where: { id: upload.id },
-      data: { verificationStatus: 'SCANNING' },
-    });
+    if (!env.START_WORKERS) {
+      const updated = await prisma.deliverableUpload.update({
+        where: { id: currentUpload.id },
+        data: {
+          verificationStatus: 'FAILED',
+          verificationConfidence: 0,
+          verificationReason: 'AI verification worker is disabled (START_WORKERS=false). Enable workers and retry verification.',
+        },
+      });
+      return {
+        jobId: null,
+        verificationStatus: updated.verificationStatus,
+        message: updated.verificationReason ?? 'AI verification worker is disabled.',
+      };
+    }
 
-    const jobId = await enqueueAiPipelineJob('verify-deliverable', {
-      type: 'verify-deliverable',
-      blobId: body.blobId,
-      relationshipId: rel.id,
-      milestoneIndex: body.milestoneIndex,
-      milestoneCondition: milestone.conditionValue,
-      walletAddress: actor.walletAddress,
-      ...(rel.tenantId ? { tenantId: rel.tenantId } : {}),
-      uploadId: upload.id,
-    });
+    let jobId: string;
+    try {
+      await prisma.deliverableUpload.update({
+        where: { id: currentUpload.id },
+        data: { verificationStatus: 'SCANNING' },
+      });
+
+      jobId = await enqueueAiPipelineJob('verify-deliverable', {
+        type: 'verify-deliverable',
+        blobId: body.blobId,
+        relationshipId: rel.id,
+        milestoneIndex: body.milestoneIndex,
+        milestoneCondition: milestone.conditionValue,
+        walletAddress: actor.walletAddress,
+        ...(rel.tenantId ? { tenantId: rel.tenantId } : {}),
+        uploadId: currentUpload.id,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to enqueue AI verification job.';
+      await prisma.deliverableUpload.update({
+        where: { id: currentUpload.id },
+        data: {
+          verificationStatus: 'FAILED',
+          verificationConfidence: 0,
+          verificationReason: `Unable to enqueue AI verification job. ${message}`,
+        },
+      });
+      throw error;
+    }
 
     return { jobId, verificationStatus: 'SCANNING' as const, message: 'Verification queued' };
   }

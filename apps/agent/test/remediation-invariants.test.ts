@@ -199,6 +199,19 @@ describe('remediation invariants', () => {
     expect(() => parseHumanAmount('1.0000001')).toThrow();
   });
 
+  test('anomaly preflight presents human and base-unit USDC amounts consistently', async () => {
+    const routeSource = await Bun.file(join(repoRoot, 'src/routes/relationships.ts')).text();
+    const seedSource = await Bun.file(join(repoRoot, 'prisma/seed.ts')).text();
+
+    expect(routeSource).toContain('totalHuman');
+    expect(routeSource).toContain('totalBaseUnits');
+    expect(routeSource).toContain('amountHuman');
+    expect(routeSource).toContain('amountBaseUnits');
+    expect(routeSource).toContain('formatHumanAmount(totalBaseUnits)');
+    expect(seedSource).toContain('USDC uses 6 decimals, so 2 USDC equals 2000000 base units');
+    expect(seedSource).toContain('Do not flag a discrepancy when the human amount and base-unit amount are mathematically equivalent');
+  });
+
   test('relationship schema rejects impossible funding and release policies', () => {
     const base = {
       recipientWallet: `0x${'1'.repeat(64)}`,
@@ -256,6 +269,8 @@ describe('remediation invariants', () => {
     expect(deliverableSource).toContain("recipientWallet: { equals: actor.walletAddress, mode: 'insensitive' }");
     expect(deliverableSource).not.toContain('agentCapId: body.agentCapId');
     expect(deliverableSource).toContain('tenantId: relationship.tenantId');
+    expect(deliverableSource).toContain('Submit the proof on-chain before starting AI verification.');
+    expect(deliverableSource).toContain("milestone.status !== 'SUBMITTED'");
     expect(routeSource).toContain('canonicalWalletAddress(body.recipientWallet)');
     expect(eventSource).toContain('MilestoneCreatedEvent');
     expect(eventSource).toContain('DeliverableVerifiedEvent');
@@ -263,6 +278,35 @@ describe('remediation invariants', () => {
     expect(watcherSource).toContain('package:${env.SUI_PACKAGE_ID}');
     expect(configSource).toContain('SUI_ADMIN_CAP_ID');
     expect(configSource).toContain('type mismatch');
+  });
+
+  test('event reconciliation decodes text fields and matches Walrus blob bytes to original blob ids', async () => {
+    const eventSource = await Bun.file(join(repoRoot, 'src/workers/event-handlers.ts')).text();
+    const transactionSource = await Bun.file(join(repoRoot, 'src/routes/transactions.ts')).text();
+    const signerSource = await Bun.file(join(repoRoot, '../web/hooks/use-ptb-signer.ts')).text();
+    const serviceSource = await Bun.file(join(repoRoot, 'src/services/relationship-management.ts')).text();
+    const repairSource = await Bun.file(join(repoRoot, 'src/workers/repair-deliverable-events.ts')).text();
+    const packageSource = await Bun.file(join(repoRoot, 'package.json')).text();
+
+    expect(eventSource).toContain('bytes32FromExternalId');
+    expect(eventSource).toContain('findDeliverableUploadForEvent');
+    expect(eventSource).toContain("asUtf8String(value(p, 'requirement'))");
+    expect(eventSource).toContain("asUtf8String(value(p, 'memo'))");
+    expect(eventSource).toContain('not proof that the AI');
+    expect(eventSource).not.toContain("data: { verificationStatus: 'SCANNING' }");
+    expect(eventSource).toContain("verificationStatus: 'VERIFIED'");
+    expect(transactionSource).toContain('normalizedStatus');
+    expect(transactionSource).toContain('isUnknownConfirmationFailure');
+    expect(transactionSource).toContain('existing.status === TransactionStatus.CONFIRMED');
+    expect(signerSource).toContain('Confirmation pending. BondFlow will keep watching this transaction.');
+    expect(signerSource).toContain('getTransactionBlock');
+    expect(serviceSource).toContain("rel.status !== 'ACTIVE'");
+    expect(serviceSource).toContain('RELATIONSHIP SETUP PREPARED');
+    expect(repairSource).toContain('DeliverableSubmittedEvent');
+    expect(repairSource).toContain('markProcessed: false');
+    expect(repairSource).toContain('RECOVERABLE_METADATA_FAILURE');
+    expect(repairSource).not.toContain('MilestoneReleasedEvent');
+    expect(packageSource).toContain('repair:deliverables');
   });
 
   test('recipient discovery is wallet-scoped and independent of workspace membership', async () => {
@@ -343,6 +387,9 @@ describe('remediation invariants', () => {
     expect(memorySource).toContain("storageStatus: 'FAILED'");
     expect(memorySource).toContain('walrusService.writeMemoryEntry');
     expect(managementSource).toContain('prisma.relationshipMemoryEntry.findMany');
+    expect(managementSource).toContain('findAccessibleRelationship');
+    expect(managementSource).toContain('OR: [{ id: relationshipIdentifier }, { suiObjectId: relationshipIdentifier }]');
+    expect(managementSource).toContain("recipientWallet: { equals: actor.walletAddress");
     expect(eventSource).toContain('indexRelationshipMemoryEvent');
     expect(watcherSource).toContain('backfillRelationshipMemory');
   });
@@ -410,6 +457,8 @@ describe('remediation invariants', () => {
     const seedSource = await Bun.file(join(repoRoot, 'prisma/seed.ts')).text();
     const bootstrapSource = await Bun.file(join(repoRoot, 'src/services/default-bootstrap.ts')).text();
     const flagSource = await Bun.file(join(repoRoot, 'src/services/feature-flags.ts')).text();
+    const adminSource = await Bun.file(join(repoRoot, 'src/services/admin-operations.ts')).text();
+    const adminClientSource = await Bun.file(join(repoRoot, '../web/app/[tenantSlug]/admin/admin-client.tsx')).text();
 
     expect(seedSource).toContain('export const PROMPT_SEEDS');
     expect(seedSource).toContain('delivery-verification-tool-calling');
@@ -422,6 +471,9 @@ describe('remediation invariants', () => {
     expect(bootstrapSource).toContain('isActive: true');
     expect(bootstrapSource).toContain('bondflow:ff:${flag.key}:*');
     expect(flagSource).toContain('DEFAULT_FLAG_VALUES.get(key)');
+    expect(adminSource).toContain('where: { isActive: true }');
+    expect(adminSource).toContain('byKey');
+    expect(adminClientSource).toContain('key={p.id ?? `${p.key}:${p.version}`}');
   });
 
   test('AI unavailable states are explicit and never masquerade as low-risk success', async () => {
@@ -443,10 +495,13 @@ describe('remediation invariants', () => {
     const workerSource = await Bun.file(join(repoRoot, 'src/workers/ai-pipeline.worker.ts')).text();
     const agentSource = await Bun.file(join(repoRoot, 'src/agents/deliverable-verification.agent.ts')).text();
     const routesSource = await Bun.file(join(repoRoot, 'src/routes/deliverables.ts')).text();
+    const relationshipSource = await Bun.file(join(repoRoot, 'src/services/relationship-management.ts')).text();
 
     expect(deliverableSource).toContain("['SCANNING', 'VERIFIED', 'REJECTED']");
     expect(deliverableSource).toContain('body.retry');
     expect(deliverableSource).toContain('AI verification disabled for this workspace.');
+    expect(deliverableSource).toContain('AI verification worker is disabled (START_WORKERS=false)');
+    expect(deliverableSource).toContain('markStaleVerificationFailed');
     expect(deliverableSource).toContain("verificationStatus: 'FAILED'");
     expect(routesSource).toContain('retry: t.Optional(t.Boolean())');
     expect(routesSource).toContain('verificationStatus: result.verificationStatus');
@@ -455,6 +510,8 @@ describe('remediation invariants', () => {
     expect(agentSource).toContain('markProcessed: true');
     expect(workerSource).toContain("data.type === 'verify-deliverable'");
     expect(workerSource).toContain("verificationStatus: 'FAILED'");
+    expect(relationshipSource).toContain('failStaleVerificationUploads');
+    expect(relationshipSource).toContain('Verification worker did not complete in time');
   });
 
   test('Walrus proof links use the aggregator blob route', async () => {
@@ -464,6 +521,7 @@ describe('remediation invariants', () => {
 
     expect(deliverableSource).toContain('/v1/blobs/');
     expect(routeSource).toContain('/v1/blobs/');
-    expect(walrusSource).toContain('/v1/blobs/${blobId}');
+    expect(walrusSource).toContain('/v1/blobs/${encodeURIComponent(blobId)}');
+    expect(walrusSource).toContain("method: 'HEAD'");
   });
 });

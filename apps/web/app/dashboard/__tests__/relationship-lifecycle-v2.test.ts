@@ -328,5 +328,43 @@ describe('relationship lifecycle v2 invariants', () => {
     expect(milestone).toContain('ReleasePolicy.AUTO_AFTER_CHALLENGE');
     expect(milestone).toContain('challenge window');
     expect(milestone).toContain('Retry or ask a workspace admin to check AI settings');
+    expect(milestone).toContain('Submit proof again');
+    expect(milestone).toContain('Submit this proof on-chain again before AI verification can run.');
+    expect(milestone).toContain('milestone.status === MilestoneStatus.SUBMITTED');
+    expect(milestone).toContain('Retry verification');
+    expect(milestone).toContain('onRetryVerification');
+    expect(detail).toContain('handleRetryVerification');
+    expect(detail).toContain('Submit the proof on-chain before retrying AI verification.');
+    expect(detail).toContain('retry: true');
+  });
+
+  it('describes the public app flow without promising automatic AI releases', () => {
+    const hero = readFileSync(join(webRoot, 'components/landing/hero.tsx'), 'utf8');
+    const features = readFileSync(join(webRoot, 'components/landing/features.tsx'), 'utf8');
+    const howItWorks = readFileSync(join(webRoot, 'components/landing/how-it-works.tsx'), 'utf8');
+    const techStack = readFileSync(join(webRoot, 'components/landing/tech-stack.tsx'), 'utf8');
+    const faq = readFileSync(join(webRoot, 'components/landing/faq.tsx'), 'utf8');
+    const guide = readFileSync(join(webRoot, 'app/guide/page.tsx'), 'utf8');
+
+    expect(hero).toContain('fund milestones on Sui');
+    expect(hero).toContain('Payer can approve release on Sui');
+    expect(hero).toContain('isReadyAuthenticated');
+    expect(features).toContain('Payer/operator approval');
+    expect(howItWorks).toContain('Auto-release is opt-in');
+    expect(faq).toContain('it does not silently move funds');
+    expect(guide).toContain('Submit Proof → Verify → Approve Release');
+    expect(guide).toContain('AI verification proves evidence quality');
+    expect(techStack).toContain('Walrus Memory');
+    expect(techStack).not.toContain('Next.js & React Core');
+    expect(`${hero}\n${faq}\n${guide}`).not.toContain('automatically unlocks the funds');
+    expect(`${hero}\n${faq}\n${guide}`).not.toContain('Escrow automatically unlocked');
+  });
+
+  it('keeps admin prompts keyed by version and allows browser worker effects under CSP', () => {
+    const admin = readFileSync(join(webRoot, 'app/[tenantSlug]/admin/admin-client.tsx'), 'utf8');
+    const nextConfig = readFileSync(join(webRoot, 'next.config.ts'), 'utf8');
+
+    expect(admin).toContain('key={p.id ?? `${p.key}:${p.version}`}');
+    expect(nextConfig).toContain("worker-src 'self' blob:");
   });
 });

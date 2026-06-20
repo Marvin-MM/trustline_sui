@@ -2,6 +2,7 @@ import { prisma } from '../db/client';
 import { logger } from '../lib/logger';
 import type { Prisma } from '@prisma/client';
 import { paymentAsset } from '../lib/payment-asset';
+import { bytes32FromExternalId } from '../lib/onchain-bytes';
 import { indexRelationshipMemoryEvent } from '../services/relationship-memory';
 import { env } from '../config/env';
 
@@ -24,6 +25,55 @@ function asString(input: unknown): string {
   if (Array.isArray(input)) return Buffer.from(input as number[]).toString('hex');
   if (typeof input === 'object' && 'bytes' in input) return asString((input as { bytes: unknown }).bytes);
   return String(input);
+}
+
+function asUtf8String(input: unknown): string {
+  if (input === null || input === undefined) return '';
+  if (typeof input === 'string') return input;
+  if (Array.isArray(input)) return Buffer.from(input as number[]).toString('utf8');
+  if (typeof input === 'object' && 'bytes' in input) return asUtf8String((input as { bytes: unknown }).bytes);
+  return String(input);
+}
+
+function asHexBytes(input: unknown): string {
+  const raw = asString(input);
+  const normalized = raw.startsWith('0x') ? raw.slice(2) : raw;
+  return /^[0-9a-fA-F]+$/.test(normalized) ? normalized.toLowerCase() : raw;
+}
+
+function externalIdToHex(input: string): string | null {
+  try {
+    return Buffer.from(bytes32FromExternalId(input)).toString('hex');
+  } catch {
+    return null;
+  }
+}
+
+async function findDeliverableUploadForEvent(
+  tx: Prisma.TransactionClient,
+  relationshipId: string,
+  milestoneIndex: number,
+  eventBlobId: unknown,
+) {
+  const eventHex = asHexBytes(eventBlobId);
+  if (!eventHex) return null;
+
+  const uploads = await tx.deliverableUpload.findMany({
+    where: { relationshipId, milestoneIndex },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return uploads.find((upload) => externalIdToHex(upload.walrusBlobId) === eventHex) ?? null;
+}
+
+async function originalDeliverableBlobId(
+  tx: Prisma.TransactionClient,
+  relationshipId: string,
+  milestoneIndex: number,
+  eventBlobId: unknown,
+): Promise<string> {
+  const upload = await findDeliverableUploadForEvent(tx, relationshipId, milestoneIndex, eventBlobId);
+  return upload?.walrusBlobId ?? asString(eventBlobId);
 }
 
 function asInt(input: unknown): number {
@@ -119,7 +169,7 @@ export async function applyBlockchainEvent(params: {
               milestoneCount,
               totalLockedAmount: asBigInt(value(p, 'total_locked_amount', 'totalLockedAmount')),
               walrusMemorySpaceId: asString(value(p, 'walrus_memory_space_id', 'walrusMemorySpaceId')),
-              memo: asString(value(p, 'memo')),
+              memo: asUtf8String(value(p, 'memo')),
               contractVersion: asInt(value(p, 'contract_version', 'contractVersion')) || 2,
               legacyReadOnly: false,
               assetType: paymentAsset.type,
@@ -135,7 +185,7 @@ export async function applyBlockchainEvent(params: {
               milestoneCount,
               totalLockedAmount: asBigInt(value(p, 'total_locked_amount', 'totalLockedAmount')),
               walrusMemorySpaceId: asString(value(p, 'walrus_memory_space_id', 'walrusMemorySpaceId')),
-              memo: asString(value(p, 'memo')),
+              memo: asUtf8String(value(p, 'memo')),
               status: 'ACTIVE',
               contractVersion: asInt(value(p, 'contract_version', 'contractVersion')) || 2,
               legacyReadOnly: false,
@@ -147,7 +197,7 @@ export async function applyBlockchainEvent(params: {
               suiObjectId: relationshipId,
               payerWallet: asString(value(p, 'payer')),
               recipientWallet: asString(value(p, 'recipient')),
-              memo: asString(value(p, 'memo')),
+              memo: asUtf8String(value(p, 'memo')),
               milestoneCount,
               totalLockedAmount: asBigInt(value(p, 'total_locked_amount', 'totalLockedAmount')),
               walrusMemorySpaceId: asString(value(p, 'walrus_memory_space_id', 'walrusMemorySpaceId')),
@@ -192,7 +242,7 @@ export async function applyBlockchainEvent(params: {
           update: {
             amount: asBigInt(value(p, 'amount')),
             conditionType: conditionType(value(p, 'condition_type', 'conditionType')),
-            conditionValue: asString(value(p, 'requirement')),
+            conditionValue: asUtf8String(value(p, 'requirement')),
             releasePolicy: releasePolicy(value(p, 'release_policy', 'releasePolicy')),
           },
           create: {
@@ -200,7 +250,7 @@ export async function applyBlockchainEvent(params: {
             milestoneIndex,
             amount: asBigInt(value(p, 'amount')),
             conditionType: conditionType(value(p, 'condition_type', 'conditionType')),
-            conditionValue: asString(value(p, 'requirement')),
+            conditionValue: asUtf8String(value(p, 'requirement')),
             releasePolicy: releasePolicy(value(p, 'release_policy', 'releasePolicy')),
           },
         });
@@ -211,15 +261,15 @@ export async function applyBlockchainEvent(params: {
       });
       if (rel) {
         const milestoneIndex = asInt(value(p, 'milestone_index', 'milestoneIndex'));
-        const blobId = asString(value(p, 'blob_id', 'blobId'));
+        const upload = await findDeliverableUploadForEvent(tx, rel.id, milestoneIndex, value(p, 'blob_id', 'blobId'));
+        const blobId = upload?.walrusBlobId ?? asString(value(p, 'blob_id', 'blobId'));
         await tx.milestone.updateMany({
           where: { relationshipId: rel.id, milestoneIndex },
           data: { status: 'SUBMITTED', deliverableBlobId: blobId },
         });
-        await tx.deliverableUpload.updateMany({
-          where: { relationshipId: rel.id, milestoneIndex, walrusBlobId: blobId },
-          data: { verificationStatus: 'SCANNING' },
-        });
+        // Submission is an on-chain state transition, not proof that the AI
+        // verifier job exists. /deliverables/verify owns the SCANNING state so
+        // it can enqueue exactly one verification job after wallet confirmation.
       }
     } else if (name.includes('DeliverableVerifiedEvent')) {
       const rel = await tx.paymentRelationship.findUnique({
@@ -227,7 +277,8 @@ export async function applyBlockchainEvent(params: {
       });
       if (rel) {
         const milestoneIndex = asInt(value(p, 'milestone_index', 'milestoneIndex'));
-        const blobId = asString(value(p, 'blob_id', 'blobId'));
+        const upload = await findDeliverableUploadForEvent(tx, rel.id, milestoneIndex, value(p, 'blob_id', 'blobId'));
+        const blobId = upload?.walrusBlobId ?? asString(value(p, 'blob_id', 'blobId'));
         const evidenceHash = asString(value(p, 'evidence_hash', 'evidenceHash'));
         await tx.milestone.updateMany({
           where: { relationshipId: rel.id, milestoneIndex },
@@ -239,14 +290,16 @@ export async function applyBlockchainEvent(params: {
             conditionMetAt: dateFromMs(value(p, 'timestamp')),
           },
         });
-        await tx.deliverableUpload.updateMany({
-          where: { relationshipId: rel.id, milestoneIndex, walrusBlobId: blobId },
-          data: {
-            verificationStatus: 'VERIFIED',
-            verificationEvidenceHash: evidenceHash,
-            verifiedAt: dateFromMs(value(p, 'timestamp')),
-          },
-        });
+        if (upload) {
+          await tx.deliverableUpload.update({
+            where: { id: upload.id },
+            data: {
+              verificationStatus: 'VERIFIED',
+              verificationEvidenceHash: evidenceHash,
+              verifiedAt: dateFromMs(value(p, 'timestamp')),
+            },
+          });
+        }
       }
     } else if (name.includes('DeliverableRejectedEvent')) {
       const rel = await tx.paymentRelationship.findUnique({
@@ -254,7 +307,8 @@ export async function applyBlockchainEvent(params: {
       });
       if (rel) {
         const milestoneIndex = asInt(value(p, 'milestone_index', 'milestoneIndex'));
-        const blobId = asString(value(p, 'blob_id', 'blobId'));
+        const upload = await findDeliverableUploadForEvent(tx, rel.id, milestoneIndex, value(p, 'blob_id', 'blobId'));
+        const blobId = upload?.walrusBlobId ?? asString(value(p, 'blob_id', 'blobId'));
         const evidenceHash = asString(value(p, 'evidence_hash', 'evidenceHash'));
         await tx.milestone.updateMany({
           where: { relationshipId: rel.id, milestoneIndex },
@@ -263,23 +317,26 @@ export async function applyBlockchainEvent(params: {
             verificationEvidenceHash: evidenceHash,
           },
         });
-        await tx.deliverableUpload.updateMany({
-          where: { relationshipId: rel.id, milestoneIndex, walrusBlobId: blobId },
-          data: {
-            verificationStatus: 'REJECTED',
-            verificationEvidenceHash: evidenceHash,
-            verifiedAt: dateFromMs(value(p, 'timestamp')),
-          },
-        });
+        if (upload) {
+          await tx.deliverableUpload.update({
+            where: { id: upload.id },
+            data: {
+              verificationStatus: 'REJECTED',
+              verificationEvidenceHash: evidenceHash,
+              verifiedAt: dateFromMs(value(p, 'timestamp')),
+            },
+          });
+        }
       }
     } else if (name.includes('MilestoneConditionMetEvent')) {
       const rel = await tx.paymentRelationship.findUnique({ where: { suiObjectId: asString(value(p, 'relationship_id', 'relationshipId')) } });
       if (rel) {
+        const milestoneIndex = asInt(value(p, 'milestone_index', 'milestoneIndex'));
         await tx.milestone.updateMany({
-          where: { relationshipId: rel.id, milestoneIndex: asInt(value(p, 'milestone_index', 'milestoneIndex')) },
+          where: { relationshipId: rel.id, milestoneIndex },
           data: {
             status: 'CONDITION_MET',
-            deliverableBlobId: asString(value(p, 'deliverable_blob_id', 'deliverableBlobId')) || null,
+            deliverableBlobId: await originalDeliverableBlobId(tx, rel.id, milestoneIndex, value(p, 'deliverable_blob_id', 'deliverableBlobId')) || null,
             conditionMetAt: dateFromMs(value(p, 'timestamp')),
           },
         });
@@ -293,7 +350,7 @@ export async function applyBlockchainEvent(params: {
           data: {
             status: 'RELEASED',
             amount: asBigInt(value(p, 'amount')),
-            deliverableBlobId: asString(value(p, 'deliverable_blob_id', 'deliverableBlobId')) || null,
+            deliverableBlobId: await originalDeliverableBlobId(tx, rel.id, milestoneIndex, value(p, 'deliverable_blob_id', 'deliverableBlobId')) || null,
             releasedAt: dateFromMs(value(p, 'release_timestamp', 'releaseTimestamp')),
           },
         });
@@ -403,7 +460,12 @@ export async function applyBlockchainEvent(params: {
             recipientWallet: asString(value(p, 'recipient')),
             amount: asBigInt(value(p, 'amount')),
             conditionType: conditionType(value(p, 'condition_type', 'conditionType')),
-            deliverableBlobId: asString(value(p, 'deliverable_blob_id', 'deliverableBlobId')) || null,
+            deliverableBlobId: await originalDeliverableBlobId(
+              tx,
+              rel.id,
+              asInt(value(p, 'milestone_index', 'milestoneIndex')),
+              value(p, 'deliverable_blob_id', 'deliverableBlobId'),
+            ) || null,
             walrusMemorySpaceId: rel.walrusMemorySpaceId,
             completionTimestamp: dateFromMs(value(p, 'completion_timestamp', 'completionTimestamp')),
           },

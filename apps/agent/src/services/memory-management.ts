@@ -1,15 +1,38 @@
-import { tenantGuard } from '../lib/tenant-guard';
 import { prisma } from '../db/client';
 import { runMemoryInsight } from '../agents/memory-insight.agent';
+import type { Prisma } from '@prisma/client';
 
 export interface MemoryActor {
   walletAddress: string;
 }
 
 export class MemoryManagementService {
+  private async findAccessibleRelationship(
+    actor: MemoryActor,
+    tenantId: string | null,
+    relationshipIdentifier: string,
+    include?: Prisma.PaymentRelationshipInclude,
+  ) {
+    const access: Prisma.PaymentRelationshipWhereInput[] = [
+      { payerWallet: { equals: actor.walletAddress, mode: 'insensitive' } },
+      { recipientWallet: { equals: actor.walletAddress, mode: 'insensitive' } },
+      { capabilities: { some: { holderWallet: { equals: actor.walletAddress, mode: 'insensitive' }, revokedAt: null } } },
+    ];
+    if (tenantId) {
+      access.push({ tenantId });
+    }
+
+    return prisma.paymentRelationship.findFirst({
+      where: {
+        OR: [{ id: relationshipIdentifier }, { suiObjectId: relationshipIdentifier }],
+        AND: [{ OR: access }],
+      },
+      ...(include ? { include } : {}),
+    });
+  }
+
   async getMemory(actor: MemoryActor, tenantId: string | null, relationshipId: string, page = 1, limit = 50) {
-    const guard = tenantGuard.forEither(tenantId, actor.walletAddress);
-    const rel = await guard.relationships.findFirst({ where: { id: relationshipId } });
+    const rel = await this.findAccessibleRelationship(actor, tenantId, relationshipId);
     if (!rel) return null;
     const where = { relationshipId: rel.id };
     const [entries, total] = await Promise.all([
@@ -45,8 +68,7 @@ export class MemoryManagementService {
   }
 
   async getInsights(actor: MemoryActor, tenantId: string | null, relationshipId: string, question: string) {
-    const guard = tenantGuard.forEither(tenantId, actor.walletAddress);
-    const rel = await guard.relationships.findFirst({ where: { id: relationshipId }, include: { milestones: true } });
+    const rel = await this.findAccessibleRelationship(actor, tenantId, relationshipId, { milestones: true });
     if (!rel) return null;
     const factualEntries = await prisma.relationshipMemoryEntry.findMany({
       where: { relationshipId: rel.id },

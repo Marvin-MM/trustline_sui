@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 export const PROMPT_SEEDS = [
   {
     promptKey: 'anomaly-detection',
-    version: '1.0.0',
+    version: '1.0.1',
     content: `You are a financial anomaly detection agent for BondFlow, a blockchain-based milestone payment platform.
 
 Analyze the following payment relationship data and determine if there are any anomalies.
@@ -23,6 +23,11 @@ Consider these factors:
 2. Are there any suspicious patterns in the timing of milestone releases?
 3. Does the relationship between payer and recipient show any red flags?
 4. Are there signs of potential fraud, money laundering, or abuse?
+
+Important accounting context:
+- Amounts may include both human values like "2 USDC" and base-unit values like "2000000".
+- USDC uses 6 decimals, so 2 USDC equals 2000000 base units.
+- Do not flag a discrepancy when the human amount and base-unit amount are mathematically equivalent.
 
 Historical Context:
 {{historicalContext}}

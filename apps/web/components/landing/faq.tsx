@@ -7,23 +7,27 @@ import { ChevronDown, HelpCircle } from 'lucide-react';
 const FAQS = [
   {
     question: 'How does the AI verify deliverables?',
-    answer: 'Our verification agents run Gemini AI models to analyze deliverables (like code repositories, documents, or design assets) stored securely on the Walrus decentralized network. They cross-reference the output against the agreed milestones and conditions of your contract, ensuring strict compliance before auto-triggering the Sui smart escrow release.',
+    answer: 'Recipients upload proof to Walrus and sign a submit transaction. BondFlow then runs a verifier agent that checks the blob, compares it with the milestone requirement, and records model, prompt version, confidence, reasoning, cost, and evidence hash. By default, that verification prepares the payer or workspace operator to approve release; it does not silently move funds.',
   },
   {
     question: 'Is my payment safe in the escrow contract?',
-    answer: 'Yes. When you fund a relationship, the SUI or USDC tokens are locked directly inside an audited Sui smart contract. They can only be released upon milestone completion verified by the AI, manually released by the payer, or resolved through a mutual dispute process. Neither party can arbitrarily withdraw the locked funds.',
+    answer: 'Yes. When you fund a relationship, USDC is locked directly in the BondFlow Sui contract. Milestones can be released by the payer, an authorized workspace operator, an explicitly scoped auto-release capability, or an admin dispute resolution. Refunds always return to the original funder.',
   },
   {
     question: 'What happens if the AI fails to verify a milestone?',
-    answer: 'If the Gemini agent detects mismatching requirements or safety anomalies, the milestone status transitions to "Incomplete". The payer can manually review and release the funds, or both parties can open a mutual dispute to coordinate resolution.',
+    answer: 'The upload is marked rejected or failed with the reason visible in the app. The recipient can retry with better evidence, while the payer/operator can review the relationship, raise a dispute when appropriate, or release only when the contract state allows it.',
   },
   {
     question: 'What is the role of Walrus Protocol in BondFlow?',
-    answer: 'Walrus is a decentralized storage network. BondFlow uses Walrus to store encrypted agreement metadata, files, and chat logs. This guarantees that your relationship memory is immutable, decentralized, and highly accessible for AI verification while keeping sensitive data private.',
+    answer: 'Walrus stores deliverable proofs, dispute evidence, and canonical relationship memory entries. Sui keeps compact hashes and object state; Walrus keeps the larger evidence payloads previewable and durable.',
   },
   {
     question: 'Do I need SUI tokens to use BondFlow?',
-    answer: 'Yes, you need a small amount of SUI token in your wallet to cover Sui network gas fees (which are extremely low, usually less than 0.01 SUI per transaction). Payers also require the necessary funding tokens (SUI or USDC) to load the escrow contract.',
+    answer: 'Yes. You need a small amount of SUI for gas, and payers need USDC for the milestone funding amount. Recipients also need SUI gas to submit deliverables or sign other on-chain actions.',
+  },
+  {
+    question: 'When do reputation proofs become available?',
+    answer: 'Every successful milestone release mints a CompletionAttestation for the recipient wallet. Once at least one attestation is indexed, the recipient can mint or update a ReputationProof from their personal reputation page.',
   },
 ];
 

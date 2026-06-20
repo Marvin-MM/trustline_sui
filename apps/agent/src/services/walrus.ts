@@ -63,9 +63,23 @@ export class WalrusService {
     const span = tracer.startSpan('walrus.fetchBlobMetadata');
     try {
       const result = await walrusCircuitBreaker.execute(async () => {
-        const response = await fetch(`${env.WALRUS_AGGREGATOR_URL}/v1/blobs/${blobId}`);
+        const blobUrl = `${env.WALRUS_AGGREGATOR_URL.replace(/\/$/, '')}/v1/blobs/${encodeURIComponent(blobId)}`;
+        let response = await fetch(blobUrl, { method: 'HEAD' });
+
+        if (response.status === 405 || response.status === 501) {
+          response = await fetch(blobUrl, { headers: { Range: 'bytes=0-0' } });
+        }
         if (!response.ok) throw new Error(`Walrus fetch failed: ${response.status}`);
-        return response.json() as Promise<Record<string, unknown>>;
+
+        return {
+          blobId,
+          available: true,
+          contentType: response.headers.get('content-type'),
+          contentLength: response.headers.get('content-length'),
+          etag: response.headers.get('etag'),
+          lastModified: response.headers.get('last-modified'),
+          sourceUrl: blobUrl,
+        };
       });
       walrusOperationsCounter.add(1, { operation: 'fetch', success: 'true' });
       span.setStatus({ code: SpanStatusCode.OK });

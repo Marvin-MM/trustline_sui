@@ -26,6 +26,10 @@ export const transactionRoutes = new Elysia({ prefix: '/api/v1/transactions' })
       return { error: `Unknown transaction type: ${body.txType ?? '<missing>'}` };
     }
     const txType = body.txType as TransactionType;
+    const rawStatus = body.status as TransactionStatus;
+    const isUnknownConfirmationFailure = rawStatus === TransactionStatus.FAILED
+      && /confirmation could not be verified|could not be verified yet|confirmation pending/i.test(body.error ?? '');
+    const normalizedStatus = isUnknownConfirmationFailure ? TransactionStatus.PENDING : rawStatus;
 
     const existing = await prisma.submittedTransaction.findUnique({
       where: { digest: body.transactionDigest },
@@ -39,28 +43,31 @@ export const transactionRoutes = new Elysia({ prefix: '/api/v1/transactions' })
           tenantId: tenantContext.tenantId,
           submittedBy: auth.walletAddress,
           txType,
-          status: body.status,
+          status: normalizedStatus,
           gasUsed: body.gasUsed ? BigInt(body.gasUsed) : null,
           submittedAt: new Date(),
-          confirmedAt: body.status === TransactionStatus.CONFIRMED ? new Date() : null,
+          confirmedAt: normalizedStatus === TransactionStatus.CONFIRMED ? new Date() : null,
           error: body.error ?? null,
         },
       });
     } else {
+      const nextStatus = existing.status === TransactionStatus.CONFIRMED && normalizedStatus !== TransactionStatus.CONFIRMED
+        ? TransactionStatus.CONFIRMED
+        : normalizedStatus;
       await prisma.submittedTransaction.update({
         where: { digest: body.transactionDigest },
         data: {
-          status: body.status,
+          status: nextStatus,
           relationshipId: body.relationshipId ?? existing.relationshipId,
           gasUsed: body.gasUsed ? BigInt(body.gasUsed) : existing.gasUsed,
-          confirmedAt: body.status === TransactionStatus.CONFIRMED ? new Date() : existing.confirmedAt,
+          confirmedAt: normalizedStatus === TransactionStatus.CONFIRMED ? new Date() : existing.confirmedAt,
           error: body.error ?? existing.error,
         },
       });
     }
 
     let reconciliation: unknown = null;
-    if (body.status === TransactionStatus.CONFIRMED) {
+    if (normalizedStatus === TransactionStatus.CONFIRMED) {
       const transaction = await suiClient.getTransactionBlock({
         digest: body.transactionDigest,
         options: { showEvents: true, showEffects: true, showObjectChanges: true },
@@ -110,7 +117,7 @@ export const transactionRoutes = new Elysia({ prefix: '/api/v1/transactions' })
         onChainStatus,
       };
     } else if (
-      body.status === TransactionStatus.FAILED
+      normalizedStatus === TransactionStatus.FAILED
       && body.relationshipId
       && txType === TransactionType.CREATE_RELATIONSHIP
     ) {
@@ -125,7 +132,13 @@ export const transactionRoutes = new Elysia({ prefix: '/api/v1/transactions' })
         action: 'WEBHOOK_PROCESSED',
         targetType: 'SubmittedTransaction',
         targetId: body.transactionDigest,
-        metadata: { source: 'client-status', status: body.status, txType, relationshipId: body.relationshipId ?? null },
+        metadata: {
+          source: 'client-status',
+          status: normalizedStatus,
+          clientStatus: rawStatus,
+          txType,
+          relationshipId: body.relationshipId ?? null,
+        },
       },
     });
 

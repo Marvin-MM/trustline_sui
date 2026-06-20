@@ -229,41 +229,12 @@ export function usePtbSigner(options: PtbSignerOptions): PtbSignerResult {
         });
       }, timeoutMs);
 
-      try {
-        // waitForTransaction is properly typed on SuiJsonRpcClient
-        const txResult = await suiClient.waitForTransaction({
-          digest: txDigest,
-          options: { showEffects: true },
-        });
-        clearTimeout(confirmationTimeout);
-        const chainStatus = txResult.effects?.status?.status;
-        if (chainStatus !== 'success') {
-          const chainError = txResult.effects?.status?.error ?? 'Transaction failed on-chain';
-          const errMsg = decodeMoveError(chainError);
-          setErrorMessage(errMsg);
-          transition(UITransactionStatus.FAILED, txDigest);
-          toast.dismiss(toastId);
-          toast.error('Transaction failed on-chain', { description: errMsg });
-          await webhooksApi.submitTransactionResult({
-            transactionDigest: txDigest,
-            status: TransactionStatus.FAILED,
-            txType,
-            relationshipId: relationshipId ?? undefined,
-            error: chainError,
-          });
-          for (const key of options.invalidateKeys ?? []) {
-            await queryClient.invalidateQueries({ queryKey: key });
-          }
-          await onFailed?.(txDigest, errMsg);
-          return;
-        }
-
+      const confirmSuccessfulTransaction = async () => {
         confirmTransaction(txDigest, BigInt(0));
         transition(UITransactionStatus.CONFIRMED, txDigest);
         toast.dismiss(toastId);
         toast.success('Transaction confirmed!');
 
-        // Notify backend of confirmation
         await webhooksApi.submitTransactionResult({
           transactionDigest: txDigest,
           status: TransactionStatus.CONFIRMED,
@@ -275,9 +246,10 @@ export function usePtbSigner(options: PtbSignerOptions): PtbSignerResult {
           await queryClient.invalidateQueries({ queryKey: key });
         }
         await onConfirmed?.(txDigest, relationshipId);
-      } catch {
-        const errMsg = 'Transaction confirmation could not be verified';
-        clearTimeout(confirmationTimeout);
+      };
+
+      const failKnownOnChainFailure = async (chainError: string) => {
+        const errMsg = decodeMoveError(chainError);
         setErrorMessage(errMsg);
         transition(UITransactionStatus.FAILED, txDigest);
         toast.dismiss(toastId);
@@ -287,12 +259,62 @@ export function usePtbSigner(options: PtbSignerOptions): PtbSignerResult {
           status: TransactionStatus.FAILED,
           txType,
           relationshipId: relationshipId ?? undefined,
-          error: errMsg,
+          error: chainError,
         });
         for (const key of options.invalidateKeys ?? []) {
           await queryClient.invalidateQueries({ queryKey: key });
         }
         await onFailed?.(txDigest, errMsg);
+      };
+
+      try {
+        // waitForTransaction is properly typed on SuiJsonRpcClient
+        const txResult = await suiClient.waitForTransaction({
+          digest: txDigest,
+          options: { showEffects: true },
+        });
+        clearTimeout(confirmationTimeout);
+        const chainStatus = txResult.effects?.status?.status;
+        if (chainStatus !== 'success') {
+          const chainError = txResult.effects?.status?.error ?? 'Transaction failed on-chain';
+          await failKnownOnChainFailure(chainError);
+          return;
+        }
+
+        await confirmSuccessfulTransaction();
+      } catch (confirmationError) {
+        clearTimeout(confirmationTimeout);
+        try {
+          const fallback = await suiClient.getTransactionBlock({
+            digest: txDigest,
+            options: { showEffects: true },
+          });
+          const fallbackStatus = fallback.effects?.status?.status;
+          if (fallbackStatus === 'success') {
+            await confirmSuccessfulTransaction();
+            return;
+          }
+          if (fallbackStatus === 'failure') {
+            await failKnownOnChainFailure(fallback.effects?.status?.error ?? 'Transaction failed on-chain');
+            return;
+          }
+        } catch {
+          // Keep the transaction pending locally. The backend watcher can still
+          // reconcile the digest once the RPC/indexer catches up.
+        }
+
+        const errMsg = confirmationError instanceof Error
+          ? confirmationError.message
+          : 'Transaction confirmation could not be verified yet';
+        setErrorMessage('Confirmation pending. BondFlow will keep watching this transaction.');
+        transition(UITransactionStatus.TIMEOUT, txDigest);
+        toast.dismiss(toastId);
+        toast.warning('Confirmation still pending', {
+          description: `${errMsg}. Check the explorer or wait for BondFlow indexing to catch up.`,
+        });
+        for (const key of options.invalidateKeys ?? []) {
+          await queryClient.invalidateQueries({ queryKey: key });
+        }
       }
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : 'Unknown error';

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowRight, Zap, Github, Twitter } from 'lucide-react';
 import { Navbar } from '@/components/landing/navbar';
@@ -12,7 +13,7 @@ import { FAQ } from '@/components/landing/faq';
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-background overflow-x-hidden font-sans">
+    <div className="relative min-h-screen bg-background [overflow-x:clip] font-sans">
       {/* Sticky Premium Navbar */}
       <Navbar />
 
@@ -80,11 +81,14 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
             {/* Column 1: Brand */}
             <div className="md:col-span-2">
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-brand text-white shadow-sm shadow-brand/10">
-                  <Zap className="h-4 w-4" />
-                </div>
-                <span className="text-base font-bold text-foreground">BondFlow</span>
+              <Link href="/" className="flex items-center mb-4">
+                <Image 
+                  src="/logos/trustline-logo.png" 
+                  alt="Trustline Logo" 
+                  width={140} 
+                  height={32} 
+                  className="object-contain" 
+                />
               </Link>
               <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
                 A programmable payment relationship protocol on Sui. AI-verified milestones, encrypted memory, and verifiable reputation for modern collaborations.

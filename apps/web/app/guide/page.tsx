@@ -121,7 +121,7 @@ export default function GuidePage() {
             <div>
               <h4 className="text-sm font-bold text-amber-500 mb-1">Important Note</h4>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Before you begin, ensure you have an active internet connection, the Sui Wallet browser extension installed, and a small amount of SUI token for transaction gas fees. The platform operates on the Sui Testnet.
+                Before you begin, install a supported Sui wallet and keep a small SUI balance for gas. Payers also need USDC for milestone funding. The current deployment operates on Sui Testnet.
               </p>
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function GuidePage() {
           <div className="mb-14">
             <h3 className="text-xl font-bold text-foreground mb-3">High-Level Overview</h3>
             <p className="text-base text-muted-foreground leading-relaxed mb-6">
-              BondFlow is a programmable payment relationship protocol that completely modernizes escrow and freelance engagements. Instead of blindly trusting a counterparty, you lock funds securely on the Sui blockchain, set clear milestones, and allow AI agents to objectively verify deliverables via the Walrus storage network before releasing payments.
+              BondFlow is a programmable USDC payment relationship platform. A payer creates milestone terms, funds a shared Sui relationship object, recipients submit proof to Walrus, AI verifies deliverable evidence, and authorized payers or operators release funds. Every release mints an on-chain completion attestation for the recipient.
             </p>
 
             <div className="bg-card border border-border/60 rounded-xl p-5 overflow-x-auto shadow-sm">
@@ -138,16 +138,16 @@ export default function GuidePage() {
 {`[Wallet Login]
       │
       ▼
-[Dashboard & Metrics] ──► [Create Relationship]
+[Personal Inbox / Workspace] ──► [Create Relationship]
                                 │
                                 ▼
-                       [Define Milestones]
+                       [Define USDC Milestones]
                                 │
                                 ▼
-                      [Fund Escrow on Sui]
+                      [Fund Relationship on Sui]
                                 │
                                 ▼
-                      [AI Verification & Release]`}
+                   [Submit Proof → Verify → Approve Release]`}
               </pre>
             </div>
           </div>
@@ -185,13 +185,13 @@ export default function GuidePage() {
           <section id="navigating-core" className="mb-14 scroll-mt-28">
             <h2 className="text-2xl font-bold text-foreground mb-4">2. Navigating to the Core App</h2>
             <p className="text-muted-foreground mb-4">
-              After successful authentication, you are immediately routed to your primary <code className="bg-muted px-1.5 py-0.5 rounded text-sm text-foreground">/dashboard</code>. 
+              After successful authentication, you land in the personal dashboard by default unless you are returning to a page you were using before sign-out.
             </p>
             <p className="text-muted-foreground mb-4">
-              The dashboard acts as your mission control. On the left, a persistent sidebar provides access to your <strong>Relationships</strong>, <strong>Reputation</strong>, and <strong>Settings</strong>. The main view displays high-level metrics: Total Value Locked (TVL), Active Agreements, and Recent Activity.
+              The personal area is wallet-owned. It shows relationships assigned to your wallet as a recipient, pending workspace invitations, and your recipient reputation. You do not need to belong to the payer&apos;s workspace to see relationships where your wallet is the recipient.
             </p>
             <p className="text-muted-foreground">
-              If you have pending items requiring your attention (like a deliverable awaiting review), they will be highlighted at the top of your active relationship list.
+              Workspaces are where teams create and manage outgoing relationships, analytics, members, settings, and payer/operator actions. Workspace operators can approve, dispute, or cancel only when their role and on-chain capability allow it.
             </p>
           </section>
 
@@ -199,7 +199,7 @@ export default function GuidePage() {
           <section id="executing-core" className="mb-14 scroll-mt-28">
             <h2 className="text-2xl font-bold text-foreground mb-4">3. Executing Core App Functions</h2>
             <p className="text-muted-foreground mb-6">
-              The absolute main purpose of BondFlow is to create and execute a programmable <strong>Payment Relationship</strong>. This replaces standard freelance contracts or trusting someone to send funds after work is completed.
+              The main purpose of BondFlow is to create and execute a programmable <strong>Payment Relationship</strong>: clear terms, locked USDC, durable evidence, explicit approval, and portable recipient reputation.
             </p>
 
             <h4 className="text-sm font-bold text-foreground uppercase tracking-wide mb-4">The Happy Path</h4>
@@ -208,28 +208,28 @@ export default function GuidePage() {
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm">1</div>
                 <div>
                   <h5 className="font-semibold text-foreground">Initiate the Relationship</h5>
-                  <p className="text-sm text-muted-foreground mt-1">Navigate to <strong>Relationships</strong> and click <code className="bg-muted px-1.5 py-0.5 rounded">Create Relationship</code>. Enter the contractor's wallet address.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Open a workspace, go to <strong>Relationships</strong>, and click <code className="bg-muted px-1.5 py-0.5 rounded">Create Relationship</code>. Enter the recipient&apos;s Sui wallet and a clear memo.</p>
                 </div>
               </div>
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm">2</div>
                 <div>
                   <h5 className="font-semibold text-foreground">Define Milestones</h5>
-                  <p className="text-sm text-muted-foreground mt-1">Add specific milestones with monetary values. Set conditions like <code className="bg-muted px-1.5 py-0.5 rounded">Deliverable Upload</code> or <code className="bg-muted px-1.5 py-0.5 rounded">Time-Gated</code>.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Add human USDC amounts such as <code className="bg-muted px-1.5 py-0.5 rounded">200.00</code>. Choose manual approval, deliverable proof, or time-gated release, and write requirements that a human and verifier can understand.</p>
                 </div>
               </div>
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm">3</div>
                 <div>
-                  <h5 className="font-semibold text-foreground">Fund Escrow on Sui</h5>
-                  <p className="text-sm text-muted-foreground mt-1">Click <code className="bg-muted px-1.5 py-0.5 rounded">Complete On-Chain Setup</code>. Your wallet will prompt you to deposit the total SUI required into the smart contract escrow.</p>
+                  <h5 className="font-semibold text-foreground">Review AI Preflight and Fund</h5>
+                  <p className="text-sm text-muted-foreground mt-1">The anomaly check is advisory and non-mutating. Then review the PTB preview and sign once to lock the total USDC in the BondFlow Sui contract.</p>
                 </div>
               </div>
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm">4</div>
                 <div>
-                  <h5 className="font-semibold text-foreground">Verify & Release</h5>
-                  <p className="text-sm text-muted-foreground mt-1">Once the contractor uploads their work to Walrus, our Gemini AI verifies it against your initial requirements and automatically unlocks the funds.</p>
+                  <h5 className="font-semibold text-foreground">Submit, Verify, Approve, or Dispute</h5>
+                  <p className="text-sm text-muted-foreground mt-1">For deliverable milestones, the recipient uploads proof to Walrus and signs a submit transaction. The backend verifier marks it verified or rejected. By default the payer or operator approves release; auto-release is opt-in and waits through its challenge window.</p>
                 </div>
               </div>
             </div>
@@ -242,11 +242,11 @@ export default function GuidePage() {
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
                   <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                  <p className="text-sm text-muted-foreground"><strong className="text-foreground">Verify Counterparty Addresses:</strong> Double-check the recipient's Sui wallet address before finalizing an escrow. Blockchain transactions are immutable and cannot be reversed.</p>
+                  <p className="text-sm text-muted-foreground"><strong className="text-foreground">Verify Counterparty Addresses:</strong> Double-check the recipient&apos;s Sui wallet address before funding. Blockchain transactions are immutable and cannot be reversed casually.</p>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                  <p className="text-sm text-muted-foreground"><strong className="text-foreground">Write Clear Conditions:</strong> Because the AI agent validates deliverables against your stated conditions, be explicitly clear in your milestone descriptions about what constitutes "done".</p>
+                  <p className="text-sm text-muted-foreground"><strong className="text-foreground">Write Clear Conditions:</strong> Deliverable verification compares proof against your stated requirement. Avoid vague text like &quot;approved by payer&quot; for a deliverable milestone; use manual approval if no proof is required.</p>
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
@@ -254,7 +254,7 @@ export default function GuidePage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                  <p className="text-sm text-muted-foreground"><strong className="text-foreground">Do Not Abandon Drafts:</strong> If you cancel a wallet signature during setup, the relationship will be marked as "Setup Incomplete." Click it in your dashboard to resume and properly fund the escrow.</p>
+                  <p className="text-sm text-muted-foreground"><strong className="text-foreground">Understand Release Control:</strong> AI verification proves evidence quality; payment release remains payer/operator controlled unless auto-release was explicitly enabled for that milestone.</p>
                 </li>
               </ul>
             </div>

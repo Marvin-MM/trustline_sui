@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               `connect-src 'self' ${backendUrl} ${walrusAgg} https://fullnode.testnet.sui.io wss://fullnode.testnet.sui.io`,
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              "worker-src 'self' blob:",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https:",

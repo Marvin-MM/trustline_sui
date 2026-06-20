@@ -9,12 +9,15 @@ import { useShallow } from 'zustand/react/shallow';
 
 export function Hero() {
   const [step, setStep] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const { isAuthenticated } = useAuthStore(
     useShallow((state) => ({ isAuthenticated: state.isAuthenticated }))
   );
+  const isReadyAuthenticated = mounted && isAuthenticated;
 
   // Cycle through states of the interactive mockup
   useEffect(() => {
+    setMounted(true);
     const timer = setInterval(() => {
       setStep((prev) => (prev + 1) % 4);
     }, 4500);
@@ -99,8 +102,8 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed"
           >
-            BondFlow is a programmable payment relationship protocol. Automate milestones,
-            write immutable history with encrypted memories on Walrus, and prove performance on Sui.
+            BondFlow turns USDC payments into programmable relationships: fund milestones on Sui,
+            store deliverables and factual memory on Walrus, verify evidence with AI, and mint portable proof of completed work.
           </motion.p>
 
           {/* CTAs */}
@@ -111,10 +114,10 @@ export function Hero() {
             className="mt-8 flex flex-col sm:flex-row items-center gap-4"
           >
             <Link
-              href={isAuthenticated ? '/dashboard' : '/auth'}
+              href={isReadyAuthenticated ? '/dashboard' : '/auth'}
               className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/95 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0"
             >
-              {isAuthenticated ? 'Go to Dashboard' : 'Get Started'}
+              {isReadyAuthenticated ? 'Go to Dashboard' : 'Get Started'}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
             <a
@@ -168,7 +171,7 @@ export function Hero() {
                 </div>
                 <div>
                   <h3 className="text-xs font-semibold text-foreground font-mono-num">AGREEMENT #BF-4089</h3>
-                  <p className="text-[10px] text-muted-foreground">Sui Smart Escrow Active</p>
+                  <p className="text-[10px] text-muted-foreground">Sui USDC Relationship Active</p>
                 </div>
               </div>
               <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500">
@@ -202,8 +205,8 @@ export function Hero() {
                       1
                     </span>
                     <div>
-                      <h4 className="text-xs font-semibold text-foreground">Deliver Escrow Smart Contract</h4>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Release escrow: 5,000 SUI</p>
+                      <h4 className="text-xs font-semibold text-foreground">Upload first logo draft</h4>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Milestone funding: 200 USDC</p>
                     </div>
                   </div>
                   
@@ -239,10 +242,10 @@ export function Hero() {
                     >
                       <div className="flex items-center gap-1.5 text-[10px] text-indigo-500 font-medium">
                         <Sparkles className="h-3.5 w-3.5 animate-spin" />
-                        <span>Gemini Agent checking deliverable...</span>
+                        <span>AI verifier checking Walrus proof...</span>
                       </div>
                       <div className="mt-1 bg-muted/30 p-2 rounded text-[9px] font-mono text-muted-foreground break-all">
-                        Fetching commit 9e7fa1b from Walrus decentralised store...
+                        Reading blob 03e7...753 from Walrus decentralized storage...
                       </div>
                     </motion.div>
                   )}
@@ -257,10 +260,10 @@ export function Hero() {
                     >
                       <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 font-semibold">
                         <Shield className="h-3.5 w-3.5" />
-                        <span>Milestone Verified & Cleared</span>
+                        <span>Milestone Verified</span>
                       </div>
                       <p className="text-[10px] text-muted-foreground mt-1">
-                        Confidence 99.8% · Hash recorded on Walrus. Escrow automatically unlocked on Sui.
+                        Confidence 94% · evidence hash recorded. Payer can approve release on Sui.
                       </p>
                     </motion.div>
                   )}
@@ -275,7 +278,7 @@ export function Hero() {
                     >
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-emerald-500 font-semibold flex items-center gap-1">
-                          <CheckCircle className="h-3.5 w-3.5" /> Paid to Satoshi Lab
+                          <CheckCircle className="h-3.5 w-3.5" /> Released to Satoshi Lab
                         </span>
                         <span className="font-mono text-muted-foreground">Tx: 0x5a2...f3b</span>
                       </div>
@@ -292,8 +295,8 @@ export function Hero() {
                       2
                     </span>
                     <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground">Security Audit & Deploy</h4>
-                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">Release escrow: 7,500 SUI</p>
+                      <h4 className="text-xs font-semibold text-muted-foreground">Final brand package</h4>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">Milestone funding: 300 USDC</p>
                     </div>
                   </div>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
@@ -311,7 +314,7 @@ export function Hero() {
               </div>
               <div className="flex items-center gap-1 text-foreground font-semibold">
                 <Award className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                <span>Reputation: </span>
+                <span>Completion rate: </span>
                 <span className="font-mono-num">
                   {step === 3 ? (
                     <motion.span
@@ -319,10 +322,10 @@ export function Hero() {
                       animate={{ scale: 1, color: 'currentColor' }}
                       className="text-amber-500"
                     >
-                      96% (+10)
+                      1 attestation
                     </motion.span>
                   ) : (
-                    '86%'
+                    'pending'
                   )}
                 </span>
               </div>

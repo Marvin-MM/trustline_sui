@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -182,21 +183,27 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <div className="group/header relative flex h-12 items-center px-1 mb-2">
           {/* Logo container, hidden when collapsed */}
           <Link href="/" className="flex flex-1 items-center gap-2 overflow-hidden transition-all duration-300 group-data-[state=collapsed]:opacity-0 group-data-[state=collapsed]:w-0 pl-1">
-            <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg gradient-brand text-white shadow-sm">
-              <Zap className="size-4" />
-            </div>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-bold tracking-tight">BondFlow</span>
-              <span className="truncate text-xs text-muted-foreground">App</span>
-            </div>
+            <Image 
+              src="/logos/trustline-logo.png" 
+              alt="Trustline Logo" 
+              width={120} 
+              height={28} 
+              className="object-contain" 
+            />
           </Link>
           
           {/* The Sidebar toggle. Sits at the end of the header when expanded, or centered when collapsed. */}
           <div className="group/logo-toggle flex shrink-0 items-center justify-center group-data-[state=collapsed]:w-full group-data-[state=expanded]:w-auto group-data-[state=collapsed]:absolute group-data-[state=collapsed]:inset-0">
             {/* The Logo when collapsed */}
             <Link href="/" className="flex items-center justify-center group-data-[state=expanded]:hidden absolute inset-0 opacity-100 transition-opacity duration-200 group-hover/logo-toggle:opacity-0 z-10">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg gradient-brand text-white shadow-sm">
-                <Zap className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">
+                <Image 
+                  src="/logos/turstline-logo-1.png" 
+                  alt="Trustline Icon" 
+                  width={24} 
+                  height={24} 
+                  className="object-contain" 
+                />
               </div>
             </Link>
             
