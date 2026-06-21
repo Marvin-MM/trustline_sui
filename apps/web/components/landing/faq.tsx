@@ -39,7 +39,7 @@ export function FAQ() {
   };
 
   return (
-    <section id="faq" className="py-24 px-6 relative overflow-hidden border-t border-border/40">
+    <section id="faq" className="py-24 px-6 relative overflow-hidden border-t border-border/40 rounded-t-3xl">
       {/* Background decoration */}
       <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent -translate-y-1/2 opacity-60" />
       <div className="absolute bottom-0 right-10 w-96 h-96 rounded-full bg-violet-500/5 blur-[120px] pointer-events-none" />
@@ -63,12 +63,14 @@ export function FAQ() {
             return (
               <div
                 key={idx}
-                className="rounded-2xl border border-border/60 bg-card/45 dark:bg-card/20 overflow-hidden transition-all duration-300 hover:border-brand/30 hover:shadow-sm"
+                className="rounded-2xl border border-border/60 bg-card/45 dark:bg-card/20 overflow-hidden transition-all duration-300 hover:border-brand/30 hover:bg-card/60 dark:hover:bg-card/30"
               >
                 <button
+                  id={`faq-trigger-${idx}`}
                   onClick={() => toggle(idx)}
-                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
+                  className="w-full flex items-center justify-between p-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl"
                   aria-expanded={isOpen}
+                  aria-controls={`faq-panel-${idx}`}
                 >
                   <div className="flex items-start gap-4">
                     <HelpCircle className="h-5 w-5 text-brand shrink-0 mt-0.5" />
@@ -86,6 +88,9 @@ export function FAQ() {
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
+                      id={`faq-panel-${idx}`}
+                      role="region"
+                      aria-labelledby={`faq-trigger-${idx}`}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}

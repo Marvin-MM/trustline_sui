@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Brain, Shield, Zap, CheckCircle, Database, Award, Loader2, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useShallow } from 'zustand/react/shallow';
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion';
 
 export function Hero() {
   const [step, setStep] = useState(0);
@@ -14,6 +15,7 @@ export function Hero() {
     useShallow((state) => ({ isAuthenticated: state.isAuthenticated }))
   );
   const isReadyAuthenticated = mounted && isAuthenticated;
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   // Cycle through states of the interactive mockup
   useEffect(() => {
@@ -29,35 +31,25 @@ export function Hero() {
       {/* Background Gradients & Effects */}
       <div className="absolute inset-0 bg-grid opacity-[0.03] dark:opacity-[0.05]" />
       
-      {/* Ambient background glows */}
+      {/* Ambient background glows - Toned down for minimalism */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.15, 0.25, 0.15],
-            x: [0, 50, 0],
-            y: [0, -30, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          className="absolute h-[500px] w-[500px] rounded-full bg-violet-500/20 blur-[130px]"
+          animate={
+            prefersReducedMotion
+              ? { opacity: 0.05 }
+              : { scale: [1, 1.05, 1], opacity: [0.03, 0.08, 0.03], x: [0, 20, 0], y: [0, -15, 0] }
+          }
+          transition={prefersReducedMotion ? { duration: 0.5 } : { duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute h-[500px] w-[500px] rounded-full bg-brand/10 blur-[130px]"
         />
         <motion.div
-          animate={{
-            scale: [1.1, 1, 1.1],
-            opacity: [0.12, 0.2, 0.12],
-            x: [0, -50, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          className="absolute h-[600px] w-[600px] rounded-full bg-blue-500/20 blur-[140px]"
+          animate={
+            prefersReducedMotion
+              ? { opacity: 0.05 }
+              : { scale: [1.05, 1, 1.05], opacity: [0.03, 0.08, 0.03], x: [0, -20, 0], y: [0, 15, 0] }
+          }
+          transition={prefersReducedMotion ? { duration: 0.5 } : { duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute h-[600px] w-[600px] rounded-full bg-indigo-500/10 blur-[140px]"
         />
       </div>
 
@@ -69,7 +61,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-6 self-start inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 dark:bg-brand/10 px-4 py-1.5 text-xs font-semibold text-brand shadow-sm shadow-brand/5"
+            className="mb-6 self-start inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 dark:bg-brand/10 px-4 py-1.5 text-xs font-semibold text-brand"
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
@@ -86,11 +78,8 @@ export function Hero() {
             className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl xl:text-7xl leading-[1.1]"
           >
             Payments are{' '}
-            <span className="relative inline-block">
-              <span className="absolute -inset-1 rounded-lg bg-gradient-to-r from-violet-500/10 to-indigo-500/10 blur-sm" />
-              <span className="relative bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                relationships
-              </span>
+            <span className="text-foreground">
+              relationships
             </span>
             ,<br />not transfers.
           </motion.h1>
@@ -115,7 +104,7 @@ export function Hero() {
           >
             <Link
               href={isReadyAuthenticated ? '/dashboard' : '/auth'}
-              className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-semibold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/95 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0"
+              className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-base font-semibold text-white shadow-md shadow-primary/20 transition-all hover:bg-primary/95 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {isReadyAuthenticated ? 'Go to Dashboard' : 'Get Started'}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -124,7 +113,7 @@ export function Hero() {
               href="https://github.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-border bg-card/50 backdrop-blur px-8 py-4 text-base font-medium text-foreground transition-all hover:bg-muted hover:border-muted-foreground/30"
+              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-border bg-card/50 backdrop-blur px-8 py-4 text-base font-medium text-foreground transition-all hover:bg-muted hover:border-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               View on GitHub
             </a>
@@ -158,11 +147,8 @@ export function Hero() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="lg:col-span-5 relative w-full"
         >
-          {/* Card Border Glow */}
-          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-violet-600 via-brand to-indigo-600 opacity-20 blur-xl dark:opacity-35" />
-
-          {/* Glass Card Container */}
-          <div className="relative rounded-2xl border border-border/60 bg-card/80 dark:bg-card/40 p-6 shadow-2xl backdrop-blur-2xl">
+          {/* Glass Card Container - Minimalist Solid Surface */}
+          <div className="relative rounded-2xl border border-border bg-card p-7 shadow-sm">
             {/* Header of Simulated Card */}
             <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-4">
               <div className="flex items-center gap-2.5">
@@ -180,13 +166,13 @@ export function Hero() {
             </div>
 
             {/* Parties */}
-            <div className="grid grid-cols-2 gap-4 mb-5 text-xs bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/40">
+            <div className="grid grid-cols-2 gap-4 mb-6 text-xs bg-muted/30 p-3.5 rounded-lg border border-border">
               <div>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-0.5">Client</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold block mb-0.5">Client</span>
                 <span className="font-semibold text-foreground">Aura Ventures</span>
               </div>
               <div>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-0.5">Contractor</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold block mb-0.5">Contractor</span>
                 <span className="font-semibold text-foreground">Satoshi Lab</span>
               </div>
             </div>
@@ -198,7 +184,7 @@ export function Hero() {
               </span>
 
               {/* Milestone 1 */}
-              <div className="relative rounded-xl border border-border/80 bg-background/50 p-4 transition-all">
+              <div className="relative rounded-xl border border-border bg-background p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[10px] font-bold text-brand mt-0.5">
@@ -288,7 +274,7 @@ export function Hero() {
               </div>
 
               {/* Milestone 2 */}
-              <div className="relative rounded-xl border border-border/30 bg-background/20 p-4 opacity-50">
+              <div className="relative rounded-xl border border-border bg-muted/20 p-4 opacity-70 grayscale-[0.2]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground mt-0.5">
@@ -338,7 +324,7 @@ export function Hero() {
               <button
                 key={i}
                 onClick={() => setStep(i)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
+                className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                   step === i ? 'w-6 bg-brand' : 'w-1.5 bg-border hover:bg-muted-foreground/30'
                 }`}
                 aria-label={`Go to step ${i + 1}`}
@@ -349,19 +335,23 @@ export function Hero() {
       </div>
 
       {/* Floating Scroll Indicator */}
-      <div className="absolute bottom-8 flex flex-col items-center gap-1.5 cursor-pointer" onClick={() => {
-        const element = document.getElementById('how-it-works');
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }}>
+      <button
+        type="button"
+        className="absolute bottom-8 flex flex-col items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md"
+        onClick={() => {
+          const element = document.getElementById('how-it-works');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }}
+      >
         <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-          className="h-8 w-0.5 rounded-full bg-gradient-to-b from-brand to-transparent"
+          animate={prefersReducedMotion ? { y: 0 } : { y: [0, 6, 0] }}
+          transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+          className="h-8 w-0.5 rounded-full bg-brand/60"
         />
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Scroll to Explore</span>
-      </div>
+      </button>
     </section>
   );
 }

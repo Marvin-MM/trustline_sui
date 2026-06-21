@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Shield, Star, Zap, Check, ArrowRight, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useStickyScrollProgress } from '@/hooks/use-sticky-scroll-progress';
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion';
 import {
   NeuralNetworkSVG,
   ShieldScanSVG,
@@ -113,6 +114,7 @@ const FEATURES = [
 
 // ─── Section header outside scroll tunnel ─────────────────────────────────────
 function FeaturesHeader() {
+  const prefersReducedMotion = usePrefersReducedMotion();
   return (
     <div className="relative z-10 mx-auto max-w-3xl py-24 px-6 text-center">
       <motion.div
@@ -151,8 +153,8 @@ function FeaturesHeader() {
         aria-hidden
       >
         <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+          animate={prefersReducedMotion ? { y: 0 } : { y: [0, 8, 0] }}
+          transition={prefersReducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
           className="flex flex-col items-center gap-1.5 text-xs text-muted-foreground"
         >
           <span>Scroll to explore</span>
@@ -177,19 +179,15 @@ function ProgressRail({
         const isActive = i === activeIndex;
         const isDone = i < activeIndex;
         return (
-          <a key={f.id} href={`#${f.id}`} className="group flex items-center gap-3">
+          <a key={f.id} href={`#${f.id}`} className="group flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full">
             <div
               className={cn(
                 'relative h-2.5 w-2.5 rounded-full transition-all duration-500',
-                isActive && `${f.colors.dot} scale-125 shadow-[0_0_8px_2px_currentColor]`,
+                isActive && `${f.colors.dot} scale-125`,
                 isDone && `${f.colors.dot} opacity-60`,
                 !isActive && !isDone && 'bg-border'
               )}
-            >
-              {isActive && (
-                <span className={cn('absolute inset-0 rounded-full animate-ping opacity-40', f.colors.dot)} />
-              )}
-            </div>
+            />
             <span
               className={cn(
                 'text-[10px] font-semibold uppercase tracking-widest transition-all duration-300 opacity-0 group-hover:opacity-100',
@@ -204,7 +202,7 @@ function ProgressRail({
       {/* Continuous fill line */}
       <div className="absolute left-[4px] top-0 bottom-0 w-px bg-border/40 -z-10">
         <div
-          className="w-full bg-gradient-to-b from-violet-500 via-blue-500 to-emerald-500 transition-all duration-100"
+          className="w-full bg-primary transition-all duration-100"
           style={{ height: `${progress * 100}%` }}
         />
       </div>
@@ -260,13 +258,13 @@ export function Features() {
                 {/* Glow ring behind illustration */}
                 <div
                   className={cn(
-                    'absolute w-72 h-72 rounded-full blur-3xl opacity-25 transition-colors duration-700',
+                    'absolute w-72 h-72 rounded-full blur-3xl opacity-40 transition-colors duration-700',
                     activeFeature.colors.glow
                   )}
                 />
                 {/* Illustration card */}
                 <div className={cn(
-                  'relative w-72 h-72 sm:w-80 sm:h-80 rounded-3xl border bg-card/30 backdrop-blur-md p-6 shadow-2xl transition-all duration-700',
+                  'relative w-72 h-72 sm:w-80 sm:h-80 rounded-3xl border bg-card/30 backdrop-blur-md p-6 transition-all duration-700',
                   activeFeature.colors.border
                 )}>
                   {/* Step badge */}
@@ -345,7 +343,7 @@ export function Features() {
                     <Link
                       href="/auth"
                       className={cn(
-                        'group inline-flex items-center gap-2 text-sm font-semibold transition-opacity hover:opacity-80',
+                        'group inline-flex items-center gap-2 text-sm font-semibold transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md',
                         activeFeature.colors.text
                       )}
                     >
@@ -359,8 +357,9 @@ export function Features() {
                 <div className="flex gap-2 mt-10 lg:hidden">
                   {FEATURES.map((f, i) => (
                     <a key={f.id} href={`#${f.id}`}
+                      aria-label={`Jump to feature ${f.step}`}
                       className={cn(
-                        'h-1.5 rounded-full transition-all duration-300',
+                        'h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                         i === activeIndex ? `w-6 ${f.colors.dot}` : 'w-1.5 bg-border'
                       )}
                     />
@@ -373,7 +372,7 @@ export function Features() {
           {/* Bottom progress bar */}
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-border/30">
             <div
-              className="h-full bg-gradient-to-r from-violet-500 via-blue-500 via-amber-500 to-emerald-500 transition-all duration-75"
+              className="h-full bg-primary transition-all duration-75"
               style={{ width: `${progress * 100}%` }}
             />
           </div>

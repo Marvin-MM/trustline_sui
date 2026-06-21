@@ -188,7 +188,14 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
               alt="Trustline Logo" 
               width={120} 
               height={28} 
-              className="object-contain" 
+              className="object-contain dark:hidden" 
+            />
+            <Image 
+              src="/logos/trustline-logo-dark.png" 
+              alt="Trustline Logo" 
+              width={120} 
+              height={28} 
+              className="object-contain hidden dark:block" 
             />
           </Link>
           
@@ -202,7 +209,14 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   alt="Trustline Icon" 
                   width={24} 
                   height={24} 
-                  className="object-contain" 
+                  className="object-contain dark:hidden" 
+                />
+                <Image 
+                  src="/logos/turstline-logo-1-dark.png" 
+                  alt="Trustline Icon" 
+                  width={24} 
+                  height={24} 
+                  className="object-contain hidden dark:block" 
                 />
               </div>
             </Link>

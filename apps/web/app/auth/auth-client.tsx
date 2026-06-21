@@ -79,8 +79,16 @@ export function AuthPageClient() {
 
         {/* Top Header Logo */}
         <Link href="/" className="group relative z-10 flex items-center">
-          <Image 
+          {/* <Image 
             src="/logos/trustline-logo.png" 
+            alt="Trustline Logo" 
+            width={140} 
+            height={32} 
+            className="object-contain dark:hidden" 
+            priority
+          /> */}
+          <Image 
+            src="/logos/trustline-logo-dark.png" 
             alt="Trustline Logo" 
             width={140} 
             height={32} 
@@ -224,7 +232,15 @@ export function AuthPageClient() {
               alt="Trustline Logo" 
               width={140} 
               height={32} 
-              className="object-contain" 
+              className="object-contain dark:hidden" 
+              priority
+            />
+            <Image 
+              src="/logos/trustline-logo-dark.png" 
+              alt="Trustline Logo" 
+              width={140} 
+              height={32} 
+              className="object-contain hidden dark:block" 
               priority
             />
           </Link>

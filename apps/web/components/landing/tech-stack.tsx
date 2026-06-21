@@ -99,7 +99,7 @@ export function TechStack() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-50px' }}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
-                className={`group relative rounded-2xl border ${tech.borderColor} bg-card/40 dark:bg-card/15 p-8 shadow-sm backdrop-blur transition-all duration-300 hover:shadow-md`}
+                className={`group relative rounded-2xl border ${tech.borderColor} bg-card/40 dark:bg-card/15 p-8 backdrop-blur transition-all duration-300 hover:bg-card/60 dark:hover:bg-card/25`}
               >
                 {/* Accent glow */}
                 <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none blur-2xl ${tech.glowColor}`} />

@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     description: 'Programmable payment relationships on Sui.',
   },
   robots: { index: true, follow: true },
+  icons: {
+    icon: '/logos/favico.png',
+  },
 };
 
 export default function RootLayout({

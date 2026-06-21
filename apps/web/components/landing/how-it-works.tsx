@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { GitBranch, Lock, Award, FileCode, CheckSquare, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { EASE_OUT } from '@/lib/animation/motion';
 
 const STEPS = [
   {
@@ -60,7 +61,7 @@ const containerVariants = {
 
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT } },
 };
 
 export function HowItWorks() {
@@ -108,7 +109,7 @@ export function HowItWorks() {
           >
             <Link
               href="/guide"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand/80 transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md"
             >
               Read the Detailed User Guide <ArrowRight className="h-4 w-4" />
             </Link>
@@ -116,35 +117,30 @@ export function HowItWorks() {
         </div>
 
         {/* Split Layout Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start mt-16">
-          {/* Left Column: Sticky 3D Walrus mascot holding stablecoin */}
-          <div className="lg:col-span-5 lg:sticky lg:top-28 flex flex-col items-center">
-            <div className="relative w-full max-w-[360px] aspect-square rounded-2xl border border-border/60 bg-gradient-to-b from-brand/10 via-brand/5 to-transparent p-6 shadow-2xl flex items-center justify-center overflow-hidden group">
-              {/* Backlight / Glow effect */}
-              <div className="absolute -inset-10 rounded-full bg-gradient-to-tr from-violet-600/20 to-brand/20 opacity-40 blur-2xl group-hover:opacity-50 transition-opacity duration-500" />
-              
-              {/* The Walrus Image */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-start mt-16">
+          {/* Left Column: Sticky Walrus mascot — full height, bleeds right into timeline */}
+          <div className="hidden lg:flex lg:col-span-5 lg:sticky lg:top-24 flex-col items-end justify-start self-start" style={{ height: 'calc(3 * 14rem + 4rem)' }}>
+            <div className="relative w-full h-full overflow-visible group">
+              {/* Ambient glow behind the figure */}
+              <div className="pointer-events-none absolute inset-0 -right-16 bg-gradient-to-tr from-violet-600/15 to-brand/15 blur-3xl rounded-full opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
+
+              {/* Walrus image — fills column, bleeds 72px into the timeline column */}
               <img
-                src="/images/walrus_character.png"
+                src="/images/walrus_character1.png"
                 alt="Walrus Mascot holding USDC stablecoin"
-                className="relative z-10 w-full h-full object-contain drop-shadow-[0_10px_30px_rgba(139,92,246,0.35)] transition-transform duration-500 group-hover:scale-105"
+                className="relative z-10 w-full h-full object-contain object-bottom drop-shadow-[0_16px_40px_rgba(139,92,246,0.30)] transition-transform duration-700 group-hover:scale-[1.03] translate-x-10 lg:translate-x-16"
               />
 
-              {/* Floating UI status badges */}
-              <div className="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-center bg-background/80 border border-border/60 p-2.5 rounded-xl backdrop-blur-md shadow-lg">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  <span className="text-[10px] font-bold text-foreground">Sui USDC Escrow</span>
-                </div>
-                <span className="text-[10px] font-mono text-muted-foreground">Network: Sui Testnet</span>
+              {/* Floating status badge — bottom left of the image */}
+              <div className="absolute bottom-6 left-2 z-20 flex items-center gap-2 bg-background/80 border border-border/60 px-3 py-2 rounded-xl backdrop-blur-md shadow-md">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="text-[10px] font-bold text-foreground whitespace-nowrap">Sui USDC Escrow</span>
+                <span className="text-[10px] font-mono text-muted-foreground hidden sm:inline">· Testnet</span>
               </div>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground/80 font-medium text-center">
-              Walrus storage ensures encrypted agreement memory remains immutable.
-            </p>
           </div>
 
           {/* Right Column: Vertical Timeline Steps */}
@@ -153,7 +149,7 @@ export function HowItWorks() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: '-100px' }}
-            className="lg:col-span-7 space-y-8 relative pl-4 lg:pl-8"
+            className="lg:col-span-7 space-y-8 relative pl-4 lg:pl-8 z-10"
           >
             {/* Vertical connector line */}
             <div className="absolute left-[28px] lg:left-[44px] top-4 bottom-4 w-[2px] bg-gradient-to-b from-brand/80 via-blue-500/80 to-emerald-500/80" />
@@ -165,7 +161,7 @@ export function HowItWorks() {
                 <motion.div
                   key={step.step}
                   variants={cardVariants}
-                  className="group relative flex gap-6 items-start bg-card/25 dark:bg-card/10 border border-border/40 hover:border-brand/30 rounded-2xl p-6 transition-all duration-300 hover:shadow-lg backdrop-blur"
+                  className="group relative flex gap-6 items-start bg-card/25 dark:bg-card/10 border border-border/40 hover:border-brand/30 hover:bg-card/35 dark:hover:bg-card/15 rounded-2xl p-6 transition-all duration-300 backdrop-blur"
                 >
                   {/* Step icon wrapper serving as timeline node */}
                   <div className={`relative z-10 flex h-10 w-10 lg:h-12 lg:w-12 shrink-0 items-center justify-center rounded-xl border ${step.bgColor}`}>

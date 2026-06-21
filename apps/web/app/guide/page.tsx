@@ -1,103 +1,135 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, useScroll, useSpring } from 'framer-motion';
 import { Navbar } from '@/components/landing/navbar';
 import { AlertCircle, ChevronRight, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { FlowDiagram } from '@/components/guide/flow-diagram';
+import { useAuthStore } from '@/stores/auth.store';
+import { useShallow } from 'zustand/react/shallow';
+import { HoverBorderGradient } from '@/components/ui/hover-border-gradient';
+
+const SECTIONS = [
+  { id: 'getting-started', title: 'Getting Started' },
+  { id: 'auth-onboarding', title: '1. Authentication & Onboarding' },
+  { id: 'navigating-core', title: '2. Navigating the Core App' },
+  { id: 'executing-core', title: '3. Executing Core Functions' },
+  { id: 'best-practices', title: '4. Operational Checklist & Best Practices' },
+];
 
 export default function GuidePage() {
   const [activeSection, setActiveSection] = useState('getting-started');
+  
+  const { isAuthenticated } = useAuthStore(
+    useShallow((state) => ({ isAuthenticated: state.isAuthenticated }))
+  );
+
+  const { scrollYProgress } = useScroll();
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      { rootMargin: '-100px 0px -60% 0px' }
-    );
-
-    const sections = document.querySelectorAll('h1[id], section[id]');
-    sections.forEach((section) => observer.observe(section));
-
-    return () => {
-      sections.forEach((section) => observer.unobserve(section));
+    const handleScroll = () => {
+      const headings = Array.from(document.querySelectorAll('h1[id], section[id]'));
+      let currentActiveId = 'getting-started';
+      
+      for (const heading of headings) {
+        const rect = heading.getBoundingClientRect();
+        // 140px threshold accounts for sticky navbar + spacing
+        if (rect.top <= 150) {
+          currentActiveId = heading.id;
+        }
+      }
+      
+      // Force last section if scrolled to the absolute bottom
+      const scrollPosition = window.scrollY + window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      if (scrollPosition >= documentHeight - 10 && headings.length > 0) {
+        const lastHeading = headings[headings.length - 1];
+        if (lastHeading) {
+          currentActiveId = lastHeading.id;
+        }
+      }
+      
+      setActiveSection(currentActiveId);
     };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const activeTitle = SECTIONS.find((s) => s.id === activeSection)?.title || 'Guide';
 
   return (
     <div className="min-h-screen bg-background font-sans">
       <Navbar />
+
+      {/* Mobile Top Progress Bar */}
+      <div className="md:hidden sticky top-[72px] z-40 bg-background/95 backdrop-blur-xl border-b border-border/50 px-5 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3 w-full">
+          {/* Circular Progress */}
+          <div className="relative w-8 h-8 shrink-0 flex items-center justify-center">
+            <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
+              <path
+                className="text-muted/30"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3.5"
+              />
+              <motion.path
+                className="text-primary"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                style={{ pathLength: scrollYProgress }}
+              />
+            </svg>
+          </div>
+          <span className="text-sm font-semibold text-foreground truncate w-[85%] leading-tight">
+            {activeTitle}
+          </span>
+        </div>
+      </div>
       
-      <div className="pt-32 pb-24 px-6 mx-auto max-w-7xl flex flex-col md:flex-row gap-12 lg:gap-16 items-start">
+      <div className="pt-12 md:pt-32 pb-24 px-6 mx-auto max-w-7xl flex flex-col md:flex-row gap-12 lg:gap-16 items-start">
         {/* Sticky Sidebar Navigation */}
         <aside className="w-full md:w-64 flex-shrink-0 md:sticky md:top-28 hidden md:block">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 pl-4">
             On this page
           </div>
           <nav className="space-y-1.5 border-l-2 border-border/60 relative">
-            <a 
-              href="#getting-started" 
-              className={`block pl-4 py-1 text-sm font-medium transition-colors ${
-                activeSection === 'getting-started' 
-                  ? 'text-brand border-l-2 border-brand -ml-[2px]' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Getting Started
-            </a>
-            <a 
-              href="#auth-onboarding" 
-              className={`block pl-4 py-1 text-sm font-medium transition-colors ${
-                activeSection === 'auth-onboarding' 
-                  ? 'text-brand border-l-2 border-brand -ml-[2px]' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              1. Authentication & Onboarding
-            </a>
-            <a 
-              href="#navigating-core" 
-              className={`block pl-4 py-1 text-sm font-medium transition-colors ${
-                activeSection === 'navigating-core' 
-                  ? 'text-brand border-l-2 border-brand -ml-[2px]' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              2. Navigating the Core App
-            </a>
-            <a 
-              href="#executing-core" 
-              className={`block pl-4 py-1 text-sm font-medium transition-colors ${
-                activeSection === 'executing-core' 
-                  ? 'text-brand border-l-2 border-brand -ml-[2px]' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              3. Executing Core Functions
-            </a>
-            <a 
-              href="#best-practices" 
-              className={`block pl-4 py-1 text-sm font-medium transition-colors ${
-                activeSection === 'best-practices' 
-                  ? 'text-brand border-l-2 border-brand -ml-[2px]' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              4. Operational Checklist
-            </a>
+            {SECTIONS.map((section) => (
+              <a 
+                key={section.id}
+                href={`#${section.id}`} 
+                className={`block pl-4 py-1 text-sm font-medium transition-all ${
+                  activeSection === section.id 
+                    ? 'text-primary border-l-2 border-primary -ml-[2px] bg-primary/5' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {section.title}
+              </a>
+            ))}
           </nav>
 
-          <div className="mt-8 pl-4">
+          <div className="mt-8 pl-4 pr-2">
             <Link
-              href="/auth"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all"
+              href={isAuthenticated ? '/dashboard' : '/auth'}
+              className="flex justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
             >
-              Launch App
-              <ArrowRight className="h-4 w-4" />
+              <HoverBorderGradient
+                containerClassName="rounded-full w-full"
+                as="span"
+                className="flex w-full items-center justify-center gap-2 bg-primary text-white font-semibold py-2 px-5 hover:bg-primary/90"
+              >
+                {isAuthenticated ? 'Dashboard' : 'Launch App'}
+                <ArrowRight className="h-4 w-4" />
+              </HoverBorderGradient>
             </Link>
           </div>
         </aside>
@@ -133,23 +165,7 @@ export default function GuidePage() {
               BondFlow is a programmable USDC payment relationship platform. A payer creates milestone terms, funds a shared Sui relationship object, recipients submit proof to Walrus, AI verifies deliverable evidence, and authorized payers or operators release funds. Every release mints an on-chain completion attestation for the recipient.
             </p>
 
-            <div className="bg-card border border-border/60 rounded-xl p-5 overflow-x-auto shadow-sm">
-              <pre className="text-xs sm:text-sm font-mono text-muted-foreground leading-relaxed">
-{`[Wallet Login]
-      │
-      ▼
-[Personal Inbox / Workspace] ──► [Create Relationship]
-                                │
-                                ▼
-                       [Define USDC Milestones]
-                                │
-                                ▼
-                      [Fund Relationship on Sui]
-                                │
-                                ▼
-                   [Submit Proof → Verify → Approve Release]`}
-              </pre>
-            </div>
+            <FlowDiagram />
           </div>
 
           <hr className="border-border/60 mb-12" />

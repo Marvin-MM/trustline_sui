@@ -5,9 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Zap, Menu, X, Sun, Moon, Github } from 'lucide-react';
+import { ArrowRight, Zap, Menu, X, Sun, Moon, Github, Twitter, Linkedin, Youtube } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useShallow } from 'zustand/react/shallow';
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion';
+import { HoverBorderGradient } from '@/components/ui/hover-border-gradient';
+import { Button } from '../ui/button';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -17,6 +20,7 @@ export function Navbar() {
   const { isAuthenticated } = useAuthStore(
     useShallow((state) => ({ isAuthenticated: state.isAuthenticated }))
   );
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     setMounted(true);
@@ -46,13 +50,14 @@ export function Navbar() {
   };
 
   return (
-    <motion.header
+    <>
+      <motion.header
       className={`fixed top-0 z-50 w-full transition-all duration-300 ${
         scrolled
           ? 'border-b border-border/80 bg-background/80 py-3 backdrop-blur-xl shadow-lg shadow-background/5'
           : 'border-b border-transparent bg-transparent py-5'
       }`}
-      initial={{ y: -100, opacity: 0 }}
+      initial={prefersReducedMotion ? false : { y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
@@ -64,7 +69,15 @@ export function Navbar() {
             alt="Trustline Logo" 
             width={160} 
             height={36} 
-            className="object-contain" 
+            className="object-contain dark:hidden" 
+            priority
+          />
+          <Image 
+            src="/logos/trustline-logo-dark.png" 
+            alt="Trustline Logo" 
+            width={160} 
+            height={36} 
+            className="object-contain hidden dark:block" 
             priority
           />
         </Link>
@@ -80,7 +93,7 @@ export function Navbar() {
               key={item.label}
               href={`#${item.id}`}
               onClick={(e) => scrollToSection(e, item.id)}
-              className="relative rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
+              className="relative rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {item.label}
             </a>
@@ -89,41 +102,37 @@ export function Navbar() {
 
         {/* Right Section Actions */}
         <div className="hidden md:flex items-center gap-4">
-          {/* GitHub Icon Link */}
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="GitHub"
-          >
-            <Github className="h-5 w-5" />
-          </a>
 
           {/* Theme Switcher */}
           <button
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Toggle theme"
           >
             {mounted ? (
               resolvedTheme === 'dark' ? (
-                <Sun className="h-4.5 w-4.5 text-amber-500" />
+                <Sun className="h-4 w-4 text-amber-500" />
               ) : (
-                <Moon className="h-4.5 w-4.5 text-violet-600" />
+                <Moon className="h-4 w-4 text-violet-600" />
               )
             ) : (
-              <div className="h-4.5 w-4.5" />
+              <div className="h-4 w-4" />
             )}
           </button>
 
           {/* CTA */}
           <Link
             href={isAuthenticated ? '/dashboard' : '/auth'}
-            className="group relative flex items-center gap-1.5 overflow-hidden rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-primary/35 hover:-translate-y-0.5 active:translate-y-0"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
           >
-            {isAuthenticated ? 'Dashboard' : 'Launch App'}
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <HoverBorderGradient
+              containerClassName="rounded-full"
+              as="span"
+              className="flex items-center gap-1.5 bg-primary text-white font-semibold px-5 py-2 hover:bg-primary/90"
+            >
+              {isAuthenticated ? 'Dashboard' : 'Launch App'}
+              <ArrowRight className="h-4 w-4" />
+            </HoverBorderGradient>
           </Link>
         </div>
 
@@ -132,7 +141,7 @@ export function Navbar() {
           {/* Theme Switcher for Mobile */}
           <button
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Toggle theme"
           >
             {mounted ? (
@@ -148,64 +157,91 @@ export function Navbar() {
 
           {/* Menu button */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="Toggle mobile menu"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex items-center justify-center rounded-full border border-border/60 bg-transparent px-5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            aria-label="Open mobile menu"
           >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            Menu
           </button>
         </div>
       </div>
+    </motion.header>
 
-      {/* Mobile Drawer Menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-b border-border bg-background/95 backdrop-blur-xl"
-          >
-            <div className="flex flex-col gap-4 px-6 py-6">
-              {[
-                { label: 'How It Works', id: 'how-it-works' },
-                { label: 'Features', id: 'features' },
-                { label: 'Tech Stack', id: 'tech-stack' },
-              ].map((item) => (
-                <a
-                  key={item.label}
-                  href={`#${item.id}`}
-                  onClick={(e) => scrollToSection(e, item.id)}
-                  className="text-lg font-medium text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {item.label}
+    {/* Mobile Drawer Menu - Full Screen */}
+    <AnimatePresence>
+      {mobileMenuOpen && (
+        <motion.div
+          initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+          animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+          transition={{ duration: prefersReducedMotion ? 0.1 : 0.25, ease: 'easeOut' }}
+          className="fixed inset-0 z-[100] flex flex-col bg-background md:hidden"
+        >
+          {/* Top Bar for Close Button inside Overlay */}
+          <div className="flex items-center justify-end px-6 py-6">
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-center rounded-full border border-border/60 bg-transparent px-5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="flex flex-1 flex-col items-center justify-center gap-10 px-6 pb-32">
+              <div className="flex flex-col items-center gap-6">
+                {[
+                  { label: 'How It Works', id: 'how-it-works' },
+                  { label: 'Features', id: 'features' },
+                  { label: 'Tech Stack', id: 'tech-stack' },
+                ].map((item) => (
+                  <a
+                    key={item.label}
+                    href={`#${item.id}`}
+                    onClick={(e) => scrollToSection(e, item.id)}
+                    className="text-4xl font-medium tracking-tight text-foreground transition-colors hover:text-primary focus-visible:outline-none"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+
+              {/* Social Icons */}
+              <div className="flex items-center gap-6 mt-2">
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Github className="h-7 w-7" />
                 </a>
-              ))}
-              <hr className="border-border/60" />
-              <div className="flex flex-col gap-3">
-                <a
-                  href="https://github.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-base font-medium text-muted-foreground hover:text-foreground"
-                >
-                  <Github className="h-5 w-5" />
-                  GitHub Repository
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Twitter className="h-7 w-7" />
                 </a>
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Linkedin className="h-7 w-7" />
+                </a>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Youtube className="h-7 w-7" />
+                </a>
+              </div>
+
+              {/* Mobile CTA */}
+              <div className="mt-6 w-full max-w-[280px]">
                 <Link
                   href={isAuthenticated ? '/dashboard' : '/auth'}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 text-base font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90"
+                  className="flex justify-center focus-visible:outline-none rounded-full"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {isAuthenticated ? 'Go to Dashboard' : 'Launch App'}
-                  <ArrowRight className="h-4 w-4" />
+                  <HoverBorderGradient
+                    containerClassName="rounded-full w-full"
+                    as="span"
+                    className="flex w-full items-center justify-center gap-2 bg-background text-foreground border border-border/50 font-semibold py-3.5 px-6 hover:bg-muted/50"
+                  >
+                    {isAuthenticated ? 'Go to Dashboard' : 'Launch App'}
+                    <ArrowRight className="h-4 w-4" />
+                  </HoverBorderGradient>
                 </Link>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   );
 }
