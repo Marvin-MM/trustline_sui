@@ -7,22 +7,22 @@ import { ChevronDown, HelpCircle } from 'lucide-react';
 const FAQS = [
   {
     question: 'How does the AI verify deliverables?',
-    answer: 'Recipients upload proof to Walrus and sign a submit transaction. BondFlow then runs a verifier agent that checks the blob, compares it with the milestone requirement, and records model, prompt version, confidence, reasoning, cost, and evidence hash. By default, that verification prepares the payer or workspace operator to approve release; it does not silently move funds.',
+    answer: 'Recipients upload proof to Walrus and sign a submit transaction. TrustLine then runs a verifier agent that checks the blob, compares it with the milestone requirement, and records model, prompt version, confidence, reasoning, cost, and evidence hash. By default, that verification prepares the payer or workspace operator to approve release; it does not silently move funds.',
   },
   {
     question: 'Is my payment safe in the escrow contract?',
-    answer: 'Yes. When you fund a relationship, USDC is locked directly in the BondFlow Sui contract. Milestones can be released by the payer, an authorized workspace operator, an explicitly scoped auto-release capability, or an admin dispute resolution. Refunds always return to the original funder.',
+    answer: 'Yes. When you fund a relationship, USDC is locked directly in the TrustLine Sui contract. Milestones can be released by the payer, an authorized workspace operator, an explicitly scoped auto-release capability, or an admin dispute resolution. Refunds always return to the original funder.',
   },
   {
     question: 'What happens if the AI fails to verify a milestone?',
     answer: 'The upload is marked rejected or failed with the reason visible in the app. The recipient can retry with better evidence, while the payer/operator can review the relationship, raise a dispute when appropriate, or release only when the contract state allows it.',
   },
   {
-    question: 'What is the role of Walrus Protocol in BondFlow?',
+    question: 'What is the role of Walrus Protocol in TrustLine?',
     answer: 'Walrus stores deliverable proofs, dispute evidence, and canonical relationship memory entries. Sui keeps compact hashes and object state; Walrus keeps the larger evidence payloads previewable and durable.',
   },
   {
-    question: 'Do I need SUI tokens to use BondFlow?',
+    question: 'Do I need SUI tokens to use TrustLine?',
     answer: 'Yes. You need a small amount of SUI for gas, and payers need USDC for the milestone funding amount. Recipients also need SUI gas to submit deliverables or sign other on-chain actions.',
   },
   {
@@ -53,7 +53,7 @@ export function FAQ() {
             Frequently Asked Questions
           </h2>
           <p className="mt-4 text-muted-foreground text-base">
-            Everything you need to know about BondFlow payment relationships, AI verification, and contract safety.
+            Everything you need to know about TrustLine payment relationships, AI verification, and contract safety.
           </p>
         </div>
 

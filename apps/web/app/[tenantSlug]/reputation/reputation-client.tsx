@@ -78,7 +78,7 @@ export function ReputationPageClient() {
     if (!signingWallet.isMatch) {
       setConnectModalOpen(true);
       toast.error('Reconnect your signing wallet', {
-        description: signingWallet.warning ?? 'Connect the wallet authenticated with BondFlow.',
+        description: signingWallet.warning ?? 'Connect the wallet authenticated with TrustLine.',
       });
       return;
     }

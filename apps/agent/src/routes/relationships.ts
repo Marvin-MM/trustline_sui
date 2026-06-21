@@ -89,7 +89,7 @@ function ptbError(error: PtbSimulationError) {
 
 function migrationRequiredError(error: DatabaseMigrationRequiredError) {
   return {
-    error: 'BondFlow database needs the latest relationship-status migration before relationship creation can continue.',
+    error: 'TrustLine database needs the latest relationship-status migration before relationship creation can continue.',
     code: error.code,
     details: {
       migration: error.migration,

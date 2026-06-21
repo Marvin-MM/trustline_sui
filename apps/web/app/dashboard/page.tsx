@@ -7,7 +7,7 @@ import { StatsCardSkeleton } from '@/components/ui/skeletons';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
-  description: 'Your BondFlow personal dashboard.',
+  description: 'Your TrustLine personal dashboard.',
 };
 
 export default async function PersonalDashboardPage() {

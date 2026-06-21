@@ -22,10 +22,10 @@ export function getSigningWalletWarning(
     return 'Sign in with a wallet before signing this transaction.';
   }
   if (!connectedAddress) {
-    return 'Your BondFlow session is active, but no wallet is connected for signing. Reconnect the same wallet to continue.';
+    return 'Your TrustLine session is active, but no wallet is connected for signing. Reconnect the same wallet to continue.';
   }
   if (authenticatedAddress.toLowerCase() !== connectedAddress.toLowerCase()) {
-    return 'The connected wallet does not match your BondFlow session. Switch to the authenticated wallet before signing.';
+    return 'The connected wallet does not match your TrustLine session. Switch to the authenticated wallet before signing.';
   }
   return null;
 }

@@ -164,7 +164,7 @@ export default function LandingPage() {
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              © {new Date().getFullYear()} BondFlow Protocol. All rights reserved.
+              © {new Date().getFullYear()} TrustLine Protocol. All rights reserved.
             </p>
           </div>
         </div>

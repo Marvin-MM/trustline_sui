@@ -17,7 +17,7 @@ export default function RootError({
         </div>
         <h1 className="mt-4 text-xl font-semibold text-foreground">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          BondFlow could not finish loading this view. Your funds and on-chain data are safe.
+          TrustLine could not finish loading this view. Your funds and on-chain data are safe.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <button

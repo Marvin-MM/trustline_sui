@@ -160,7 +160,7 @@ export function CreateTenantModal({ open, onOpenChange }: CreateTenantModalProps
                 </label>
                 <div className="flex items-center rounded-lg border border-border bg-background overflow-hidden focus-within:ring-2 focus-within:ring-brand/50">
                   <span className="px-3 py-2.5 text-xs text-muted-foreground border-r border-border bg-muted shrink-0">
-                    bondflow.io/
+                    trustline.io/
                   </span>
                   <input
                     id="tenant-slug"

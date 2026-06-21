@@ -8,7 +8,7 @@ const TECHS = [
     name: 'Sui Blockchain',
     role: 'Shared Objects & Attestations',
     description:
-      'BondFlow uses Sui shared objects to hold USDC-funded payment relationships, enforce milestone state transitions, emit indexable events, and mint CompletionAttestation and ReputationProof objects.',
+      'TrustLine uses Sui shared objects to hold USDC-funded payment relationships, enforce milestone state transitions, emit indexable events, and mint CompletionAttestation and ReputationProof objects.',
     icon: Flame,
     color: 'text-blue-400',
     borderColor: 'border-blue-500/10 hover:border-blue-500/30',

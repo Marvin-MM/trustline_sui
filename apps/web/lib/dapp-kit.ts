@@ -17,7 +17,7 @@ export const dAppKit = createDAppKit({
   networks: [SUI_NETWORK_ENV],
   defaultNetwork: SUI_NETWORK_ENV,
   createClient: () => new SuiJsonRpcClient({ url: rpcUrl, network: SUI_NETWORK_ENV }),
-  slushWalletConfig: enableSlushWebWallet ? { appName: 'BondFlow' } : null,
+  slushWalletConfig: enableSlushWebWallet ? { appName: 'TrustLine' } : null,
   enableBurnerWallet,
 });
 

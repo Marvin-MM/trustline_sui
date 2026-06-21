@@ -154,7 +154,7 @@ export function FlowDiagram() {
             <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
           </div>
           <span className="text-xs font-semibold text-muted-foreground">
-            BondFlow — Payment Relationship Flow
+            TrustLine — Payment Relationship Flow
           </span>
         </div>
         <button

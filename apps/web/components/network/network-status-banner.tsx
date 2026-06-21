@@ -22,7 +22,7 @@ export function NetworkStatusBanner() {
     icon = WifiOff;
     colorClasses = 'bg-zinc-900 text-zinc-100 dark:bg-zinc-800';
   } else if (!backendOnline) {
-    message = 'BondFlow services are temporarily unavailable. Your wallet and on-chain data are safe.';
+    message = 'TrustLine services are temporarily unavailable. Your wallet and on-chain data are safe.';
     icon = ServerCrash;
     colorClasses = 'bg-amber-600 text-white';
   } else if (!suiRpcOnline) {
@@ -45,7 +45,7 @@ export function NetworkStatusBanner() {
           role="alert"
           aria-live="assertive"
         >
-          <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium">
+          <div className="flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-medium">
             <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{message}</span>
           </div>

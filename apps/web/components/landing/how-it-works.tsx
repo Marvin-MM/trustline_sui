@@ -98,7 +98,7 @@ export function HowItWorks() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mt-4 text-muted-foreground text-lg"
           >
-            BondFlow replaces trust with smart code, AI-verification, and verifiable reputation.
+            TrustLine replaces trust with smart code, AI-verification, and verifiable reputation.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 15 }}

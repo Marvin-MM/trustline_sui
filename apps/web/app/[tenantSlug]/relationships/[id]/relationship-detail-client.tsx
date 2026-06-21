@@ -402,7 +402,7 @@ export function RelationshipDetailClient({
 
       {waitingForIndexing && (
         <div className="rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-sm text-muted-foreground">
-          Transaction confirmed on-chain. BondFlow is refreshing indexed milestones, memory, attestations, and notifications now.
+          Transaction confirmed on-chain. TrustLine is refreshing indexed milestones, memory, attestations, and notifications now.
         </div>
       )}
 
@@ -537,7 +537,7 @@ export function RelationshipDetailClient({
                       Blob ID: {pendingBlobId}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Submit the Walrus blob on-chain. BondFlow resolves the scoped verifier capability automatically.
+                      Submit the Walrus blob on-chain. TrustLine resolves the scoped verifier capability automatically.
                     </p>
                     <button
                       onClick={() => { setPtbModalOpen(true); void submitDeliverableSigner.prepare(); }}

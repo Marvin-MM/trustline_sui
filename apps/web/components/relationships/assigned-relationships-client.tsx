@@ -88,7 +88,7 @@ export function AssignedRelationshipsClient() {
           title={search ? 'No matching assignments' : 'Nothing assigned yet'}
           description={search
             ? 'Try a different memo or payer wallet.'
-            : 'When someone creates a BondFlow relationship using this wallet as the recipient, it will appear here automatically.'}
+            : 'When someone creates a TrustLine relationship using this wallet as the recipient, it will appear here automatically.'}
         />
       ) : (
         <>

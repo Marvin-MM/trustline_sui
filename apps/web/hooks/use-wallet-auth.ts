@@ -69,7 +69,7 @@ export function useWalletAuth() {
         const axiosData = (error as { response?: { data?: { error?: string; message?: string } } }).response?.data;
         const backendMessage = axiosData?.error ?? axiosData?.message;
         toast.error('Authentication failed', {
-          description: backendMessage ?? 'Could not authenticate with BondFlow. Please try again.',
+          description: backendMessage ?? 'Could not authenticate with TrustLine. Please try again.',
         });
       } finally {
         setIsLoading(false);

@@ -122,7 +122,7 @@ export function AgentCapModal({
             {mode === 'grant' ? (
               <div className="space-y-4">
                 <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-                  BondFlow uses its configured verifier wallet. This capability is scoped to this relationship, expires automatically, and can be revoked here.
+                  TrustLine uses its configured verifier wallet. This capability is scoped to this relationship, expires automatically, and can be revoked here.
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -178,7 +178,7 @@ export function AgentCapModal({
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-sm font-medium text-foreground">Revoke tracked automation capability</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  BondFlow will revoke the capability selected from this relationship&apos;s automation status. No object ID entry is required.
+                  TrustLine will revoke the capability selected from this relationship&apos;s automation status. No object ID entry is required.
                 </p>
               </div>
             )}

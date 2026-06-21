@@ -91,7 +91,7 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed"
           >
-            BondFlow turns USDC payments into programmable relationships: fund milestones on Sui,
+            TrustLine turns USDC payments into programmable relationships: fund milestones on Sui,
             store deliverables and factual memory on Walrus, verify evidence with AI, and mint portable proof of completed work.
           </motion.p>
 

@@ -19,7 +19,7 @@ export default function OpenGraphImage() {
           fontFamily: 'Inter, system-ui, sans-serif',
         }}
       >
-        <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: 0 }}>BondFlow</div>
+        <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: 0 }}>TrustLine</div>
         <div style={{ marginTop: 44, fontSize: 72, fontWeight: 800, lineHeight: 1.04, maxWidth: 900 }}>
           Payments are relationships, not transfers.
         </div>

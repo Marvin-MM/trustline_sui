@@ -88,8 +88,8 @@ export function SettingsPageClient({ tenantSlug, initialTab = 'General' }: { ten
       void queryClient.invalidateQueries({ queryKey: queryKeys.tenants.members(tenantId ?? '') });
       toast.success('Invitation created', {
         description: result.invitationDelivery.email === 'queued'
-          ? 'The member can accept in BondFlow and will also receive an email.'
-          : 'The invitation will appear when that wallet signs in to BondFlow.',
+          ? 'The member can accept in TrustLine and will also receive an email.'
+          : 'The invitation will appear when that wallet signs in to TrustLine.',
       });
       setInviteOpen(false);
     },

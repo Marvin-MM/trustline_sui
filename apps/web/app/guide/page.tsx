@@ -144,7 +144,7 @@ export default function GuidePage() {
           </div>
 
           <h1 id="getting-started" className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl mb-8 leading-tight">
-            Getting Started with BondFlow
+            Getting Started with TrustLine
           </h1>
 
           {/* Admonition Box */}
@@ -162,7 +162,7 @@ export default function GuidePage() {
           <div className="mb-14">
             <h3 className="text-xl font-bold text-foreground mb-3">High-Level Overview</h3>
             <p className="text-base text-muted-foreground leading-relaxed mb-6">
-              BondFlow is a programmable USDC payment relationship platform. A payer creates milestone terms, funds a shared Sui relationship object, recipients submit proof to Walrus, AI verifies deliverable evidence, and authorized payers or operators release funds. Every release mints an on-chain completion attestation for the recipient.
+              TrustLine is a programmable USDC payment relationship platform. A payer creates milestone terms, funds a shared Sui relationship object, recipients submit proof to Walrus, AI verifies deliverable evidence, and authorized payers or operators release funds. Every release mints an on-chain completion attestation for the recipient.
             </p>
 
             <FlowDiagram />
@@ -174,7 +174,7 @@ export default function GuidePage() {
           <section id="auth-onboarding" className="mb-14 scroll-mt-28">
             <h2 className="text-2xl font-bold text-foreground mb-4">1. Authentication & Onboarding</h2>
             <p className="text-muted-foreground mb-4">
-              BondFlow eliminates traditional passwords by utilizing Sign-In With Sui (SIWS). This guarantees that your wallet address acts as your unique, cryptographically secure identity.
+              TrustLine eliminates traditional passwords by utilizing Sign-In With Sui (SIWS). This guarantees that your wallet address acts as your unique, cryptographically secure identity.
             </p>
             
             <div className="bg-muted/30 rounded-xl border border-border/50 p-6 mb-6">
@@ -188,7 +188,7 @@ export default function GuidePage() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>Best Practice:</strong> Always ensure the signature request clearly displays "Sign in to BondFlow" to prevent phishing.</span>
+                <span><strong>Best Practice:</strong> Always ensure the signature request clearly displays "Sign in to TrustLine" to prevent phishing.</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
@@ -215,7 +215,7 @@ export default function GuidePage() {
           <section id="executing-core" className="mb-14 scroll-mt-28">
             <h2 className="text-2xl font-bold text-foreground mb-4">3. Executing Core App Functions</h2>
             <p className="text-muted-foreground mb-6">
-              The main purpose of BondFlow is to create and execute a programmable <strong>Payment Relationship</strong>: clear terms, locked USDC, durable evidence, explicit approval, and portable recipient reputation.
+              The main purpose of TrustLine is to create and execute a programmable <strong>Payment Relationship</strong>: clear terms, locked USDC, durable evidence, explicit approval, and portable recipient reputation.
             </p>
 
             <h4 className="text-sm font-bold text-foreground uppercase tracking-wide mb-4">The Happy Path</h4>
@@ -238,7 +238,7 @@ export default function GuidePage() {
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold text-sm">3</div>
                 <div>
                   <h5 className="font-semibold text-foreground">Review AI Preflight and Fund</h5>
-                  <p className="text-sm text-muted-foreground mt-1">The anomaly check is advisory and non-mutating. Then review the PTB preview and sign once to lock the total USDC in the BondFlow Sui contract.</p>
+                  <p className="text-sm text-muted-foreground mt-1">The anomaly check is advisory and non-mutating. Then review the PTB preview and sign once to lock the total USDC in the TrustLine Sui contract.</p>
                 </div>
               </div>
               <div className="flex gap-4">

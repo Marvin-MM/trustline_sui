@@ -306,11 +306,11 @@ export function usePtbSigner(options: PtbSignerOptions): PtbSignerResult {
         const errMsg = confirmationError instanceof Error
           ? confirmationError.message
           : 'Transaction confirmation could not be verified yet';
-        setErrorMessage('Confirmation pending. BondFlow will keep watching this transaction.');
+        setErrorMessage('Confirmation pending. TrustLine will keep watching this transaction.');
         transition(UITransactionStatus.TIMEOUT, txDigest);
         toast.dismiss(toastId);
         toast.warning('Confirmation still pending', {
-          description: `${errMsg}. Check the explorer or wait for BondFlow indexing to catch up.`,
+          description: `${errMsg}. Check the explorer or wait for TrustLine indexing to catch up.`,
         });
         for (const key of options.invalidateKeys ?? []) {
           await queryClient.invalidateQueries({ queryKey: key });

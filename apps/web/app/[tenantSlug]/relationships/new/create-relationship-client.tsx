@@ -117,7 +117,7 @@ export function CreateRelationshipClient({ tenantSlug }: { tenantSlug: string })
     : !hasLiveSigningWallet
       ? 'Your app session is restored, but Slush is not connected for signing. Reconnect the same wallet before continuing.'
       : !isSigningWalletMatch
-        ? 'The connected wallet does not match your BondFlow session. Switch to the authenticated wallet before signing.'
+        ? 'The connected wallet does not match your TrustLine session. Switch to the authenticated wallet before signing.'
         : null;
 
   const { data: assetPreflight, isLoading: balanceLoading, refetch: refetchBalances } = useQuery({
@@ -162,7 +162,7 @@ export function CreateRelationshipClient({ tenantSlug }: { tenantSlug: string })
         throw new Error('No wallet is connected. Reconnect Slush before signing this transaction.');
       }
       if (walletAddress && currentAccount.address.toLowerCase() !== walletAddress.toLowerCase()) {
-        throw new Error('Connected wallet does not match the wallet authenticated with BondFlow.');
+        throw new Error('Connected wallet does not match the wallet authenticated with TrustLine.');
       }
       const result = await dAppKit.signAndExecuteTransaction({ transaction: tx });
       return parseDAppKitExecutionResult(result);
@@ -378,7 +378,7 @@ export function CreateRelationshipClient({ tenantSlug }: { tenantSlug: string })
               <div className="rounded-lg border border-border bg-muted/20 px-4 py-3">
                 <p className="text-sm font-medium text-foreground">Encrypted relationship memory is included</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  BondFlow creates and manages the Walrus/MemWal memory space automatically after pre-flight checks pass.
+                  TrustLine creates and manages the Walrus/MemWal memory space automatically after pre-flight checks pass.
                 </p>
               </div>
 

@@ -2,7 +2,7 @@ import { normalizeSuiAddress } from '@mysten/sui/utils';
 import { verifyPersonalMessageSignature } from '@mysten/sui/verify';
 import type { SuiJsonRpcClient } from '@mysten/sui/jsonRpc';
 
-const AUTH_MESSAGE_PREFIX = 'Sign to authenticate with BondFlow. No gas. No transfers. Nonce: ';
+const AUTH_MESSAGE_PREFIX = 'Sign to authenticate with TrustLine. No gas. No transfers. Nonce: ';
 
 export function canonicalAuthMessage(nonce: string): string {
   return `${AUTH_MESSAGE_PREFIX}${nonce}`;

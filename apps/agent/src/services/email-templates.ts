@@ -10,9 +10,9 @@ function wrap(title: string, content: string): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title></head>
 <body style="margin:0;padding:0;background:${BG_COLOR};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;padding:24px">
-<tr><td style="padding:24px 0;text-align:center"><strong style="color:${BRAND_COLOR};font-size:24px">BondFlow</strong></td></tr>
+<tr><td style="padding:24px 0;text-align:center"><strong style="color:${BRAND_COLOR};font-size:24px">TrustLine</strong></td></tr>
 <tr><td style="background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0">${content}</td></tr>
-<tr><td style="padding:24px;text-align:center;color:#94a3b8;font-size:12px">BondFlow — Payments are relationships, not just transactions.</td></tr>
+<tr><td style="padding:24px;text-align:center;color:#94a3b8;font-size:12px">TrustLine — Payments are relationships, not just transactions.</td></tr>
 </table></body></html>`;
 }
 
@@ -70,7 +70,7 @@ export function teamMemberInvited(p: { tenantName: string; role: string; invited
   return wrap('Team Invitation', `<h2 style="color:${BRAND_COLOR};margin:0 0 16px">You're Invited!</h2>
 <p style="color:#475569">You've been invited to join <strong>${p.tenantName}</strong> as <strong>${p.role}</strong>.</p>
 <p style="color:#64748b">Invited by: <span style="font-family:monospace;font-size:13px">${p.invitedBy.slice(0, 10)}...</span></p>
-<p style="color:#475569">Log in to BondFlow to accept the invitation.</p>`);
+<p style="color:#475569">Log in to TrustLine to accept the invitation.</p>`);
 }
 
 export function teamMemberJoined(p: { memberWallet: string; tenantName: string; role: string }): string {
