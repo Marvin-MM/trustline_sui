@@ -17,6 +17,10 @@ export const webhooksApi = {
    * The server-to-server webhook remains HMAC-protected and is not called by browsers.
    */
   submitTransactionResult: async (params: WebhookTransactionResultDto): Promise<void> => {
-    await apiClient.post('/transactions/client-status', params);
+    await apiClient.post('/transactions/client-status', params, {
+      // Confirmed transactions reconcile Sui events, factual memory, and
+      // lifecycle jobs. Keep the global API timeout strict for normal calls.
+      timeout: params.status === 'CONFIRMED' ? 40_000 : 30_000,
+    });
   },
 };

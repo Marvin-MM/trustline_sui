@@ -26,6 +26,15 @@ export function getApiErrorMessage(error: unknown, fallback = 'Request failed'):
   }
 
   const payload = error.response?.data;
+  if (error.code === 'ECONNABORTED') {
+    const timeoutMs = Number(error.config?.timeout);
+    const timeoutSeconds = Number.isFinite(timeoutMs) && timeoutMs > 0
+      ? Math.round(timeoutMs / 1000)
+      : null;
+    return timeoutSeconds
+      ? `The request took longer than ${timeoutSeconds} seconds. Processing may still complete in the background.`
+      : 'The request timed out. Processing may still complete in the background.';
+  }
   const message = typeof payload?.error === 'string'
     ? payload.error
     : typeof payload?.message === 'string'

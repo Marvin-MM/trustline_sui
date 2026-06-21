@@ -32,6 +32,8 @@ export function TransactionStatusToast({ digest, status }: TransactionStatusToas
       case UITransactionStatus.DRY_RUNNING:
       case UITransactionStatus.SIGNING:
       case UITransactionStatus.SUBMITTING:
+      case UITransactionStatus.PENDING:
+      case UITransactionStatus.FINALIZING:
         if (!toastIdRef.current) {
           toastIdRef.current = toast.loading(message);
         } else {

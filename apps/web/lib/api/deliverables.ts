@@ -67,8 +67,8 @@ export const deliverablesApi = {
     relationshipId: string;
     milestoneIndex: number;
     blobId: string;
-  }): Promise<{ ptb: string; description: string; estimatedGas: string }> => {
-    const { data } = await apiClient.post<{ ptb: string; description: string; estimatedGas: string }>(
+  }): Promise<{ ptb: string; description: string; estimatedGas: string; relationshipId: string }> => {
+    const { data } = await apiClient.post<{ ptb: string; description: string; estimatedGas: string; relationshipId: string }>(
       '/deliverables/submit/ptb',
       params
     );

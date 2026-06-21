@@ -35,6 +35,7 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
   [UITransactionStatus.SIGNED]: <Loader2 className="h-5 w-5 animate-spin text-blue-500" />,
   [UITransactionStatus.SUBMITTING]: <Loader2 className="h-5 w-5 animate-spin text-blue-500" />,
   [UITransactionStatus.PENDING]: <Loader2 className="h-5 w-5 animate-spin text-blue-500" />,
+  [UITransactionStatus.FINALIZING]: <Loader2 className="h-5 w-5 animate-spin text-blue-500" />,
   [UITransactionStatus.CONFIRMED]: <CheckCircle className="h-5 w-5 text-emerald-500" />,
   [UITransactionStatus.FAILED]: <XCircle className="h-5 w-5 text-destructive" />,
   [UITransactionStatus.DRY_RUN_FAILED]: <AlertCircle className="h-5 w-5 text-destructive" />,
@@ -50,6 +51,7 @@ function getConfirmLabel(status: UITransactionStatus): string {
     case UITransactionStatus.SIGNED: return 'Submitting...';
     case UITransactionStatus.SUBMITTING: return 'Submitting...';
     case UITransactionStatus.PENDING: return 'Confirming...';
+    case UITransactionStatus.FINALIZING: return 'Finalizing...';
     case UITransactionStatus.CONFIRMED: return 'Done';
     case UITransactionStatus.FAILED:
     case UITransactionStatus.DRY_RUN_FAILED:
@@ -99,7 +101,8 @@ export function PtbPreviewModal({
     status === UITransactionStatus.SIGNING ||
     status === UITransactionStatus.SIGNED ||
     status === UITransactionStatus.SUBMITTING ||
-    status === UITransactionStatus.PENDING;
+    status === UITransactionStatus.PENDING ||
+    status === UITransactionStatus.FINALIZING;
 
   const isError =
     status === UITransactionStatus.DRY_RUN_FAILED ||
@@ -290,7 +293,7 @@ export function PtbPreviewModal({
                         : 'bg-brand hover:bg-brand/90 active:scale-95'
                     )}
                   >
-                    {(status === UITransactionStatus.PREPARING || status === UITransactionStatus.SIGNING || status === UITransactionStatus.SIGNED || status === UITransactionStatus.SUBMITTING || status === UITransactionStatus.PENDING || status === UITransactionStatus.DRY_RUNNING) && (
+                    {(status === UITransactionStatus.PREPARING || status === UITransactionStatus.SIGNING || status === UITransactionStatus.SIGNED || status === UITransactionStatus.SUBMITTING || status === UITransactionStatus.PENDING || status === UITransactionStatus.FINALIZING || status === UITransactionStatus.DRY_RUNNING) && (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     )}
                     {getConfirmLabel(status)}

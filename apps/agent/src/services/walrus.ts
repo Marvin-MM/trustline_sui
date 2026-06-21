@@ -115,7 +115,9 @@ export class WalrusService {
     try {
       await walrusCircuitBreaker.execute(async () => {
         if (!memwal) return;
-        await memwal.rememberAndWait(JSON.stringify(entry), spaceId, { timeoutMs: 30000 });
+        // The relayer continues embedding, encrypting, uploading, and indexing
+        // after accepting the job. The final blob ID is not required here.
+        await memwal.remember(JSON.stringify(entry), spaceId);
       });
       span.setStatus({ code: SpanStatusCode.OK });
     } catch (error) {

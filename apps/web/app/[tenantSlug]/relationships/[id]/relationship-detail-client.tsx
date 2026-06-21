@@ -308,7 +308,7 @@ export function RelationshipDetailClient({
   const relationshipsHref = tenantSlug
     ? ROUTES.tenantRelationships(tenantSlug)
     : ROUTES.personalRelationships();
-  const waitingForIndexing = activeSignerState.status === UITransactionStatus.CONFIRMED;
+  const waitingForIndexing = activeSignerState.status === UITransactionStatus.FINALIZING;
 
   return (
     <div className="space-y-6">

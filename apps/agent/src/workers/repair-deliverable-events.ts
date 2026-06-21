@@ -68,11 +68,20 @@ async function repairDeliverableEvents(): Promise<void> {
     },
   });
 
+  const payerApprovalDeadlinesCleared = await prisma.milestone.updateMany({
+    where: {
+      releasePolicy: 'PAYER_APPROVAL',
+      challengeDeadline: { not: null },
+    },
+    data: { challengeDeadline: null },
+  });
+
   repairLogger.info(
     {
       replayed,
       staleVerificationUploadsMarkedFailed: stale.count,
       recoverableMetadataFailuresMarkedFailed: recoverableMetadataFailures.count,
+      payerApprovalDeadlinesCleared: payerApprovalDeadlinesCleared.count,
     },
     'Deliverable derived-state repair complete',
   );

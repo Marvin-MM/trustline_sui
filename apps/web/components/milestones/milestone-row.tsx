@@ -73,7 +73,9 @@ export function MilestoneRow({
       ? milestone.status === MilestoneStatus.PENDING ? 'Submit proof again' : 'Retry upload'
       : 'Upload proof';
   const verificationLabel = milestone.deliverable?.verificationStatus === 'UPLOADED'
-    ? 'Uploaded to Walrus; submit on-chain to start verification'
+    ? milestone.status === MilestoneStatus.SUBMITTED
+      ? 'Submitted on-chain; verification is ready to start'
+      : 'Uploaded to Walrus; submit on-chain to start verification'
     : milestone.deliverable?.verificationStatus
       ? `Verification: ${milestone.deliverable.verificationStatus.replaceAll('_', ' ')}`
       : null;
@@ -216,12 +218,14 @@ export function MilestoneRow({
                 </TooltipPrimitive.Root>
               </TooltipPrimitive.Provider>
             )}
-            {milestone.deliverable?.verificationStatus === 'FAILED' && milestone.status === MilestoneStatus.SUBMITTED && (
+            {milestone.deliverable
+              && ['UPLOADED', 'FAILED'].includes(milestone.deliverable.verificationStatus)
+              && milestone.status === MilestoneStatus.SUBMITTED && (
               <button
                 onClick={() => onRetryVerification?.(index)}
                 className="rounded-lg bg-brand/10 px-3 py-1.5 text-xs font-medium text-brand transition-colors hover:bg-brand/20"
               >
-                Retry verification
+                {milestone.deliverable.verificationStatus === 'UPLOADED' ? 'Start verification' : 'Retry verification'}
               </button>
             )}
 

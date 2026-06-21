@@ -129,6 +129,7 @@ export const deliverableRoutes = new Elysia({ prefix: '/api/v1/deliverables' })
       ptb: result.result.txBytes,
       description: `Submit deliverable for milestone ${body.milestoneIndex + 1}`,
       estimatedGas: 'estimatedGas' in result.result ? result.result.estimatedGas : undefined,
+      relationshipId: rel.id,
     };
   }, {
     body: t.Object({

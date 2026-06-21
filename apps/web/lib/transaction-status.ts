@@ -16,6 +16,7 @@ export enum UITransactionStatus {
   SIGNED = 'SIGNED',                // signature obtained
   SUBMITTING = 'SUBMITTING',        // sending to backend webhook
   PENDING = 'PENDING',              // on-chain, awaiting confirmation
+  FINALIZING = 'FINALIZING',        // confirmed on-chain, reconciling backend lifecycle work
   CONFIRMED = 'CONFIRMED',          // tx confirmed
   FAILED = 'FAILED',                // tx failed on-chain
   TIMEOUT = 'TIMEOUT',              // confirmation not received in 60s
@@ -32,6 +33,7 @@ export const UI_TRANSACTION_STATUS_MESSAGES: Record<UITransactionStatus, string>
   [UITransactionStatus.SIGNED]: 'Signed — submitting...',
   [UITransactionStatus.SUBMITTING]: 'Submitting to network...',
   [UITransactionStatus.PENDING]: 'Transaction submitted — awaiting confirmation...',
+  [UITransactionStatus.FINALIZING]: 'Confirmed on-chain — finalizing lifecycle updates...',
   [UITransactionStatus.CONFIRMED]: 'Transaction confirmed!',
   [UITransactionStatus.FAILED]: 'Transaction failed on-chain.',
   [UITransactionStatus.TIMEOUT]:

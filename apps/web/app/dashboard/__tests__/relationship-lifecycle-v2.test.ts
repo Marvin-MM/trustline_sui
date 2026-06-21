@@ -296,6 +296,8 @@ describe('relationship lifecycle v2 invariants', () => {
 
   it('prevents double create signing and redirects only after modal completion', () => {
     const signer = readFileSync(join(webRoot, 'hooks/use-ptb-signer.ts'), 'utf8');
+    const webhooksApi = readFileSync(join(webRoot, 'lib/api/webhooks.ts'), 'utf8');
+    const memoryApi = readFileSync(join(webRoot, 'lib/api/memory.ts'), 'utf8');
     const createPage = readFileSync(
       join(webRoot, 'app/[tenantSlug]/relationships/new/create-relationship-client.tsx'),
       'utf8',
@@ -312,6 +314,10 @@ describe('relationship lifecycle v2 invariants', () => {
     expect(createPage).not.toContain('router.push(relationshipsHref);');
     expect(modal).toContain('UITransactionStatus.PREPARING');
     expect(modal).toContain('UITransactionStatus.PENDING');
+    expect(modal).toContain('UITransactionStatus.FINALIZING');
+    expect(signer).toContain('Finalizing lifecycle updates');
+    expect(webhooksApi).toMatch(/params\.status === 'CONFIRMED' \? \d+_\d+ : 30_000/);
+    expect(memoryApi).toMatch(/timeout: \d+_\d+/);
   });
 
   it('keeps relationship progress polling while verification and indexing are pending', () => {
@@ -332,6 +338,8 @@ describe('relationship lifecycle v2 invariants', () => {
     expect(milestone).toContain('Submit this proof on-chain again before AI verification can run.');
     expect(milestone).toContain('milestone.status === MilestoneStatus.SUBMITTED');
     expect(milestone).toContain('Retry verification');
+    expect(milestone).toContain('Start verification');
+    expect(milestone).toContain('Submitted on-chain; verification is ready to start');
     expect(milestone).toContain('onRetryVerification');
     expect(detail).toContain('handleRetryVerification');
     expect(detail).toContain('Submit the proof on-chain before retrying AI verification.');
@@ -352,7 +360,7 @@ describe('relationship lifecycle v2 invariants', () => {
     expect(features).toContain('Payer/operator approval');
     expect(howItWorks).toContain('Auto-release is opt-in');
     expect(faq).toContain('it does not silently move funds');
-    expect(guide).toContain('Submit Proof → Verify → Approve Release');
+    expect(guide).toContain('Submit, Verify, Approve, or Dispute');
     expect(guide).toContain('AI verification proves evidence quality');
     expect(techStack).toContain('Walrus Memory');
     expect(techStack).not.toContain('Next.js & React Core');

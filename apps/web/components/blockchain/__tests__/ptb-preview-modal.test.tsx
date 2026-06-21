@@ -58,6 +58,18 @@ describe('PtbPreviewModal', () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it('keeps Done unavailable while confirmed lifecycle work is finalizing', () => {
+    render(
+      <PtbPreviewModal
+        {...baseProps}
+        status={UITransactionStatus.FINALIZING}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Finalizing...' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument();
+  });
+
   it('blocks signing and offers reconnection without a live wallet', async () => {
     const onConfirm = vi.fn();
     const onConnectWallet = vi.fn();

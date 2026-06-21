@@ -76,7 +76,7 @@ export class MemoryManagementService {
       take: 20,
     });
     return runMemoryInsight({
-      relationshipId,
+      relationshipId: rel.id,
       walrusMemorySpaceId: rel.walrusMemorySpaceId,
       question,
       relationshipData: JSON.stringify({
@@ -88,7 +88,7 @@ export class MemoryManagementService {
         .map((entry) => `[${entry.occurredAt.toISOString()}] ${entry.summary}`)
         .join('\n'),
       walletAddress: actor.walletAddress,
-      ...(tenantId ? { tenantId } : {}),
+      ...(rel.tenantId ? { tenantId: rel.tenantId } : {}),
     });
   }
 }

@@ -47,7 +47,7 @@ export const memoryApi = {
   ): Promise<MemoryInsightResponse> => {
     const { data } = await apiClient.get<MemoryInsightResponse>(
       `/memory/${relationshipId}/insights`,
-      { params: { question } }
+      { params: { question }, timeout: 40_000 }
     );
     return data;
   },

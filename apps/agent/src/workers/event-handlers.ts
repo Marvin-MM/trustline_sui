@@ -76,6 +76,57 @@ async function originalDeliverableBlobId(
   return upload?.walrusBlobId ?? asString(eventBlobId);
 }
 
+async function enqueueSubmittedDeliverableVerification(payload: EventPayload): Promise<void> {
+  const relationship = await prisma.paymentRelationship.findUnique({
+    where: { suiObjectId: asString(value(payload, 'relationship_id', 'relationshipId')) },
+  });
+  if (!relationship) return;
+
+  const milestoneIndex = asInt(value(payload, 'milestone_index', 'milestoneIndex'));
+  const eventHex = asHexBytes(value(payload, 'blob_id', 'blobId'));
+  const uploads = await prisma.deliverableUpload.findMany({
+    where: { relationshipId: relationship.id, milestoneIndex },
+    orderBy: { createdAt: 'desc' },
+  });
+  const upload = uploads.find((candidate) => externalIdToHex(candidate.walrusBlobId) === eventHex);
+  if (!upload) {
+    eventLogger.warn(
+      { relationshipId: relationship.id, milestoneIndex },
+      'Deliverable submission indexed without a matching upload; verification was not queued',
+    );
+    return;
+  }
+
+  try {
+    const { deliverableManagementService } = await import('../services/deliverable-management');
+    const result = await deliverableManagementService.queueVerification(
+      { walletAddress: upload.uploaderWallet },
+      relationship.tenantId,
+      {
+        relationshipId: relationship.id,
+        milestoneIndex,
+        blobId: upload.walrusBlobId,
+      },
+    );
+    if ('notFound' in result || 'invalidState' in result) {
+      eventLogger.warn(
+        { relationshipId: relationship.id, milestoneIndex, result },
+        'Deliverable verification could not be queued after event reconciliation',
+      );
+      return;
+    }
+    eventLogger.info(
+      { relationshipId: relationship.id, milestoneIndex, verificationStatus: result.verificationStatus },
+      'Deliverable verification reconciled from confirmed submission event',
+    );
+  } catch (error) {
+    eventLogger.error(
+      { relationshipId: relationship.id, milestoneIndex, error: (error as Error).message },
+      'Failed to queue deliverable verification after event reconciliation',
+    );
+  }
+}
+
 function asInt(input: unknown): number {
   const parsed = Number(asString(input));
   return Number.isFinite(parsed) ? parsed : 0;
@@ -115,6 +166,11 @@ async function updateTerminalRelationshipStatus(
 function dateFromMs(input: unknown): Date {
   const ms = Number(asString(input));
   return Number.isFinite(ms) && ms > 0 ? new Date(ms) : new Date();
+}
+
+function optionalDateFromMs(input: unknown): Date | null {
+  const ms = Number(asString(input));
+  return Number.isFinite(ms) && ms > 0 ? new Date(ms) : null;
 }
 
 export async function applyBlockchainEvent(params: {
@@ -263,13 +319,32 @@ export async function applyBlockchainEvent(params: {
         const milestoneIndex = asInt(value(p, 'milestone_index', 'milestoneIndex'));
         const upload = await findDeliverableUploadForEvent(tx, rel.id, milestoneIndex, value(p, 'blob_id', 'blobId'));
         const blobId = upload?.walrusBlobId ?? asString(value(p, 'blob_id', 'blobId'));
+        const digest = params.suiEventId.split(':')[0] ?? '';
+        await tx.submittedTransaction.updateMany({
+          where: { digest, txType: 'SUBMIT_DELIVERABLE' },
+          data: {
+            relationshipId: rel.id,
+            status: 'CONFIRMED',
+            confirmedAt: dateFromMs(value(p, 'timestamp')),
+            error: null,
+          },
+        });
         await tx.milestone.updateMany({
           where: { relationshipId: rel.id, milestoneIndex },
           data: { status: 'SUBMITTED', deliverableBlobId: blobId },
         });
-        // Submission is an on-chain state transition, not proof that the AI
-        // verifier job exists. /deliverables/verify owns the SCANNING state so
-        // it can enqueue exactly one verification job after wallet confirmation.
+        if (upload && params.markProcessed) {
+          await tx.deliverableUpload.update({
+            where: { id: upload.id },
+            data: {
+              verificationStatus: 'UPLOADED',
+              verificationConfidence: null,
+              verificationReason: null,
+              verificationEvidenceHash: null,
+              verifiedAt: null,
+            },
+          });
+        }
       }
     } else if (name.includes('DeliverableVerifiedEvent')) {
       const rel = await tx.paymentRelationship.findUnique({
@@ -286,7 +361,7 @@ export async function applyBlockchainEvent(params: {
             status: 'CONDITION_MET',
             deliverableBlobId: blobId,
             verificationEvidenceHash: evidenceHash,
-            challengeDeadline: dateFromMs(value(p, 'challenge_deadline', 'challengeDeadline')),
+            challengeDeadline: optionalDateFromMs(value(p, 'challenge_deadline', 'challengeDeadline')),
             conditionMetAt: dateFromMs(value(p, 'timestamp')),
           },
         });
@@ -528,6 +603,13 @@ export async function applyBlockchainEvent(params: {
     payload: params.payload,
     sender: params.sender,
   });
+
+  // Event reconciliation is the durable trigger. The browser also calls the
+  // idempotent verification endpoint as a fast path, but closing a modal or tab
+  // must not strand a confirmed deliverable in UPLOADED.
+  if (params.markProcessed && name.includes('DeliverableSubmittedEvent')) {
+    await enqueueSubmittedDeliverableVerification(p);
+  }
 
   eventLogger.info({ eventName: name, suiEventId: params.suiEventId }, 'Blockchain event applied');
 }

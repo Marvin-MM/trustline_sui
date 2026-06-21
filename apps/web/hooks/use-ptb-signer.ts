@@ -230,22 +230,39 @@ export function usePtbSigner(options: PtbSignerOptions): PtbSignerResult {
       }, timeoutMs);
 
       const confirmSuccessfulTransaction = async () => {
+        transition(UITransactionStatus.FINALIZING, txDigest);
+        toast.loading('Confirmed on-chain. Finalizing lifecycle updates...', { id: toastId });
+        try {
+          await webhooksApi.submitTransactionResult({
+            transactionDigest: txDigest,
+            status: TransactionStatus.CONFIRMED,
+            txType,
+            relationshipId: relationshipId ?? undefined,
+          });
+
+          for (const key of options.invalidateKeys ?? []) {
+            await queryClient.invalidateQueries({ queryKey: key });
+          }
+          await onConfirmed?.(txDigest, relationshipId);
+        } catch (finalizationError) {
+          const message = getApiErrorMessage(
+            finalizationError,
+            'Backend lifecycle finalization is still pending.',
+          );
+          setErrorMessage('Confirmed on-chain, but lifecycle finalization is still pending. TrustLine will reconcile it automatically.');
+          transition(UITransactionStatus.TIMEOUT, txDigest);
+          toast.dismiss(toastId);
+          toast.warning('Transaction confirmed; finalization pending', { description: message });
+          for (const key of options.invalidateKeys ?? []) {
+            await queryClient.invalidateQueries({ queryKey: key });
+          }
+          return;
+        }
+
         confirmTransaction(txDigest, BigInt(0));
         transition(UITransactionStatus.CONFIRMED, txDigest);
         toast.dismiss(toastId);
-        toast.success('Transaction confirmed!');
-
-        await webhooksApi.submitTransactionResult({
-          transactionDigest: txDigest,
-          status: TransactionStatus.CONFIRMED,
-          txType,
-          relationshipId: relationshipId ?? undefined,
-        });
-
-        for (const key of options.invalidateKeys ?? []) {
-          await queryClient.invalidateQueries({ queryKey: key });
-        }
-        await onConfirmed?.(txDigest, relationshipId);
+        toast.success('Transaction confirmed and finalized!');
       };
 
       const failKnownOnChainFailure = async (chainError: string) => {

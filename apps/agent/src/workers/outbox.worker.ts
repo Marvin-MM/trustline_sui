@@ -8,6 +8,10 @@ import { emailService } from '../services/email';
 import { logger } from '../lib/logger';
 import { tracer, SpanStatusCode } from '../tracing';
 import type { NotificationType } from '@prisma/client';
+import {
+  persistRelationshipMemoryEntry,
+  RELATIONSHIP_MEMORY_PERSIST_EVENT,
+} from '../services/relationship-memory';
 
 const obLogger = logger.child({ module: 'outbox-worker' });
 const POLL_INTERVAL_MS = 5000;
@@ -34,11 +38,15 @@ interface OutboxPayload {
 
 export class OutboxWorker {
   private intervalId: ReturnType<typeof setInterval> | null = null;
+  private processing = false;
 
   start(): void {
     obLogger.info('Outbox worker starting');
     this.backfillSkippedInAppNotifications().catch((error) =>
       obLogger.error({ error: (error as Error).message }, 'In-app notification backfill failed'),
+    );
+    this.processOutbox().catch(err =>
+      obLogger.error({ error: (err as Error).message }, 'Initial outbox processing failed'),
     );
     this.intervalId = setInterval(() => {
       this.processOutbox().catch(err =>
@@ -85,6 +93,11 @@ export class OutboxWorker {
   }
 
   private async processOutbox(): Promise<void> {
+    if (this.processing) {
+      obLogger.debug('Outbox poll skipped because the previous batch is still running');
+      return;
+    }
+    this.processing = true;
     const span = tracer.startSpan('outbox.process');
     try {
       const events = await prisma.$transaction(async (tx) => {
@@ -115,6 +128,16 @@ export class OutboxWorker {
 
       for (const event of events) {
         try {
+          if (event.eventType === RELATIONSHIP_MEMORY_PERSIST_EVENT) {
+            await persistRelationshipMemoryEntry(event.aggregateId);
+            await prisma.outboxEvent.update({
+              where: { id: event.id },
+              data: { published: true, publishedAt: new Date(), lockedUntil: null, error: null },
+            });
+            obLogger.debug({ eventId: event.id, memoryEntryId: event.aggregateId }, 'Relationship memory persisted');
+            continue;
+          }
+
           const payload = event.payload as OutboxPayload;
           const notification = await prisma.notification.upsert({
             where: { sourceOutboxEventId: event.id },
@@ -185,6 +208,7 @@ export class OutboxWorker {
       span.setStatus({ code: SpanStatusCode.ERROR });
       throw error;
     } finally {
+      this.processing = false;
       span.end();
     }
   }
