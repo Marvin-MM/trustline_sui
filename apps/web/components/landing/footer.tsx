@@ -119,7 +119,7 @@ export function Footer() {
               href="/guide" 
               className="group mb-8 inline-flex items-center gap-2 rounded-full border border-border/60 bg-transparent px-5 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-muted/50 hover:border-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Read the docs
+              Read the Guide
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             
