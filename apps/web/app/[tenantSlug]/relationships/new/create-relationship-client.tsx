@@ -531,11 +531,11 @@ export function CreateRelationshipClient({ tenantSlug }: { tenantSlug: string })
               )}
 
               <div className="flex justify-between pt-2">
-                <button type="button" onClick={goBack} disabled={isAdvancingStep2 || isCheckingAnomaly} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors disabled:opacity-60">
+                <button type="button" onClick={goBack} disabled={isAdvancingStep2} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors disabled:opacity-60">
                   <ChevronLeft className="h-4 w-4" /> Back
                 </button>
-                <button type="submit" disabled={isAdvancingStep2 || isCheckingAnomaly} className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white hover:bg-brand/90 transition-colors disabled:opacity-60">
-                  {isAdvancingStep2 || isCheckingAnomaly ? (
+                <button type="submit" disabled={isAdvancingStep2} className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white hover:bg-brand/90 transition-colors disabled:opacity-60">
+                  {isAdvancingStep2 ? (
                     <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />Processing...</>
                   ) : (
                     <>Continue <ChevronRight className="h-4 w-4" /></>
@@ -550,81 +550,123 @@ export function CreateRelationshipClient({ tenantSlug }: { tenantSlug: string })
             <div className="space-y-5">
               <h2 className="text-base font-semibold text-foreground">AI Pre-Flight Check</h2>
               <div className={cn(
-                'rounded-xl border p-6 text-center space-y-3',
+                'rounded-xl border p-6 text-center space-y-3 min-h-[220px] flex flex-col justify-center items-center',
+                isCheckingAnomaly ? 'border-brand/20 bg-brand/5' :
                 preflightError ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-muted/20'
               )}>
-                {preflightError || anomalyResult?.status === 'UNAVAILABLE' ? (
-                  <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
+                {isCheckingAnomaly ? (
+                  <div className="py-2 flex w-full flex-col items-center justify-center space-y-4">
+                    <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand/10 text-brand">
+                      <Sparkles className="h-6 w-6 animate-pulse" />
+                      {/* Animated orbiting ring */}
+                      <div className="absolute inset-0 rounded-full border-[3px] border-brand/20 border-t-brand animate-spin" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-foreground animate-pulse">AI Agent is analyzing...</p>
+                      <p className="text-xs text-muted-foreground">Checking milestones and recipient patterns</p>
+                    </div>
+                    {/* Skeleton loading bars */}
+                    <div className="mt-6 w-full max-w-[200px] space-y-2.5 opacity-60">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <motion.div
+                          className="h-full bg-brand/60"
+                          initial={{ x: '-100%' }}
+                          animate={{ x: '200%' }}
+                          transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+                        />
+                      </div>
+                      <div className="h-1.5 w-5/6 overflow-hidden rounded-full bg-muted mx-auto">
+                        <motion.div
+                          className="h-full bg-brand/40"
+                          initial={{ x: '-100%' }}
+                          animate={{ x: '200%' }}
+                          transition={{ repeat: Infinity, duration: 1.5, delay: 0.2, ease: 'easeInOut' }}
+                        />
+                      </div>
+                      <div className="h-1.5 w-4/6 overflow-hidden rounded-full bg-muted mx-auto">
+                        <motion.div
+                          className="h-full bg-brand/30"
+                          initial={{ x: '-100%' }}
+                          animate={{ x: '200%' }}
+                          transition={{ repeat: Infinity, duration: 1.5, delay: 0.4, ease: 'easeInOut' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <CheckCircle className="mx-auto h-10 w-10 text-emerald-500" />
-                )}
-                <p className="text-sm font-medium text-foreground">
-                  {preflightError || anomalyResult?.status === 'UNAVAILABLE'
-                    ? 'Pre-flight check needs attention'
-                    : 'Pre-flight check completed'}
-                </p>
-                <p className={cn(
-                  'text-xs leading-relaxed',
-                  preflightError || anomalyResult?.status === 'UNAVAILABLE' ? 'text-destructive' : 'text-muted-foreground',
-                )}>
-                  {preflightError
-                    ? preflightError
-                    : anomalyResult?.status === 'UNAVAILABLE'
-                      ? `AI anomaly analysis is unavailable: ${anomalyResult.reason}. You can retry or continue with manual review.`
-                    : anomalyResult?.status === 'COMPLETED'
-                      ? `${anomalyResult.result.severity.toUpperCase()} risk: ${anomalyResult.result.reason} Recommended action: ${anomalyResult.result.suggestedAction.replaceAll('_', ' ')}.`
-                    : anomalyResult?.status === 'DISABLED' || !aiEnabled
-                      ? 'AI anomaly analysis is disabled for this workspace. You can continue to review the funding transaction and sign when ready.'
-                      : 'The non-mutating anomaly check completed. Review the parties and milestones before funding.'}
-                </p>
-                {!preflightError && anomalyResult?.status === 'UNAVAILABLE' && (
-                  <button
-                    type="button"
-                    onClick={() => void runAnomalyCheck()}
-                    disabled={isCheckingAnomaly}
-                    className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-60"
-                  >
-                    {isCheckingAnomaly && (
-                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-muted-foreground" />
+                  <div className="w-full flex flex-col items-center">
+                    {preflightError || anomalyResult?.status === 'UNAVAILABLE' ? (
+                      <AlertTriangle className="mx-auto h-10 w-10 text-destructive mb-3" />
+                    ) : (
+                      <CheckCircle className="mx-auto h-10 w-10 text-emerald-500 mb-3" />
                     )}
-                    Retry AI check
-                  </button>
-                )}
-                {!preflightError && !aiEnabled && (
-                  <div className="mx-auto max-w-sm rounded-lg border border-brand/20 bg-brand/5 p-3 text-left">
-                    <p className="text-xs font-medium text-foreground">Want AI to analyze this draft?</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Enable workspace AI to run anomaly analysis now and use deliverable verification later.
+                    <p className="text-sm font-medium text-foreground">
+                      {preflightError || anomalyResult?.status === 'UNAVAILABLE'
+                        ? 'Pre-flight check needs attention'
+                        : 'Pre-flight check completed'}
                     </p>
-                    {canManageFeatureFlags ? (
+                    <p className={cn(
+                      'text-xs leading-relaxed mt-2',
+                      preflightError || anomalyResult?.status === 'UNAVAILABLE' ? 'text-destructive' : 'text-muted-foreground',
+                    )}>
+                      {preflightError
+                        ? preflightError
+                        : anomalyResult?.status === 'UNAVAILABLE'
+                          ? `AI anomaly analysis is unavailable: ${anomalyResult.reason}. You can retry or continue with manual review.`
+                        : anomalyResult?.status === 'COMPLETED'
+                          ? `${anomalyResult.result.severity.toUpperCase()} risk: ${anomalyResult.result.reason} Recommended action: ${anomalyResult.result.suggestedAction.replaceAll('_', ' ')}.`
+                        : anomalyResult?.status === 'DISABLED' || !aiEnabled
+                          ? 'AI anomaly analysis is disabled for this workspace. You can continue to review the funding transaction and sign when ready.'
+                          : 'The non-mutating anomaly check completed. Review the parties and milestones before funding.'}
+                    </p>
+                    {!preflightError && anomalyResult?.status === 'UNAVAILABLE' && (
                       <button
                         type="button"
-                        onClick={handleEnableAiAnalysis}
-                        disabled={isEnablingAI || isCheckingAnomaly}
-                        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand/90 disabled:opacity-60"
+                        onClick={() => void runAnomalyCheck()}
+                        disabled={isCheckingAnomaly}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-60 mt-3"
                       >
-                        {isEnablingAI || isCheckingAnomaly ? (
-                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                        ) : (
-                          <Sparkles className="h-3.5 w-3.5" />
-                        )}
-                        Enable and run AI check
+                        Retry AI check
                       </button>
-                    ) : (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Ask a workspace owner or admin to enable AI in Settings - Feature Flags.
-                      </p>
+                    )}
+                    {!preflightError && !aiEnabled && (
+                      <div className="mx-auto w-full max-w-sm rounded-lg border border-brand/20 bg-brand/5 p-3 text-left mt-4">
+                        <p className="text-xs font-medium text-foreground">Want AI to analyze this draft?</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Enable workspace AI to run anomaly analysis now and use deliverable verification later.
+                        </p>
+                        {canManageFeatureFlags ? (
+                          <button
+                            type="button"
+                            onClick={handleEnableAiAnalysis}
+                            disabled={isEnablingAI || isCheckingAnomaly}
+                            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand/90 disabled:opacity-60"
+                          >
+                            {isEnablingAI || isCheckingAnomaly ? (
+                              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                            ) : (
+                              <Sparkles className="h-3.5 w-3.5" />
+                            )}
+                            Enable and run AI check
+                          </button>
+                        ) : (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Ask a workspace owner or admin to enable AI in Settings - Feature Flags.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
               </div>
               <div className="flex justify-between pt-2">
-                <button onClick={goBack} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors">
+                <button onClick={goBack} disabled={isCheckingAnomaly} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50">
                   <ChevronLeft className="h-4 w-4" /> Back
                 </button>
                 <button
                   onClick={advanceToStep4}
-                  className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white hover:bg-brand/90 transition-colors"
+                  disabled={isCheckingAnomaly}
+                  className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white hover:bg-brand/90 transition-colors disabled:opacity-50"
                 >
                   Continue <ChevronRight className="h-4 w-4" />
                 </button>

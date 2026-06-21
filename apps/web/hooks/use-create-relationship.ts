@@ -119,6 +119,7 @@ export function useCreateRelationship() {
     setPtbData(null);
     setPreflightError(null);
     setIsCheckingAnomaly(true);
+    setCurrentStep(3);
     try {
       const result = await relationshipsApi.checkAnomaly({
         recipientWallet: party.recipientWallet,
@@ -134,7 +135,6 @@ export function useCreateRelationship() {
       setCurrentStep(3);
     } catch (error) {
       setPreflightError(errorMessage(error));
-      setCurrentStep(3);
     } finally {
       setIsCheckingAnomaly(false);
     }
@@ -149,7 +149,8 @@ export function useCreateRelationship() {
     setPreflightError(null);
 
     if (aiEnabled && step1Data) {
-      await runAnomalyCheck();
+      // Start analysis in background, state handles the loading UI
+      runAnomalyCheck().catch(console.error);
     } else {
       setAnomalyResult(null);
       setCurrentStep(3);
