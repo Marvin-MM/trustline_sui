@@ -9,6 +9,7 @@ import { Hero } from '@/components/landing/hero';
 import { HowItWorks } from '@/components/landing/how-it-works';
 import { Features } from '@/components/landing/features';
 import { TechStack } from '@/components/landing/tech-stack';
+import { Footer } from '@/components/landing/footer';
 import { FAQ } from '@/components/landing/faq';
 
 export default function LandingPage() {
@@ -75,100 +76,7 @@ export default function LandingPage() {
       {/* FAQ Section */}
       <FAQ />
 
-      {/* High-fidelity Footer */}
-      <footer className="border-t border-border/60 bg-muted/10 dark:bg-muted/5 py-12 px-6 rounded-t-3xl">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
-            {/* Column 1: Brand */}
-            <div className="md:col-span-2">
-              <Link href="/" className="flex items-center mb-4 w-fit rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-                <Image 
-                  src="/logos/trustline-logo.png" 
-                  alt="Trustline Logo" 
-                  width={140} 
-                  height={32} 
-                  className="object-contain dark:hidden" 
-                />
-                <Image 
-                  src="/logos/trustline-logo-dark.png" 
-                  alt="Trustline Logo" 
-                  width={140} 
-                  height={32} 
-                  className="object-contain hidden dark:block" 
-                />
-              </Link>
-              <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-                A programmable payment relationship protocol on Sui. AI-verified milestones, encrypted memory, and verifiable reputation for modern collaborations.
-              </p>
-            </div>
-
-            {/* Column 2: Platform Links */}
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4">Platform</h4>
-              <ul className="space-y-2.5">
-                <li>
-                  <Link href="/auth" className="text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm">
-                    Launch App
-                  </Link>
-                </li>
-                <li>
-                  <a href="#how-it-works" className="text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm">
-                    How it Works
-                  </a>
-                </li>
-                <li>
-                  <a href="#features" className="text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm">
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#tech-stack" className="text-xs text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm">
-                    Tech Stack
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 3: Community & Docs */}
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4">Community</h4>
-              <ul className="space-y-2.5">
-                <li>
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm">
-                    <Github className="h-3.5 w-3.5" /> GitHub
-                  </a>
-                </li>
-                <li>
-                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm">
-                    <Twitter className="h-3.5 w-3.5" /> Twitter
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-border/40 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                Sui Testnet Active
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
-                Walrus Storage Live
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Gemini Agent Online
-              </span>
-            </div>
-
-            <p className="text-[11px] text-muted-foreground">
-              © {new Date().getFullYear()} TrustLine Protocol. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
