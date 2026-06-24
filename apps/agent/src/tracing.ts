@@ -63,7 +63,11 @@ if (OTEL_ENABLED) {
 
   const metricReader = new PeriodicExportingMetricReader({
     exporter: metricExporter,
-    exportIntervalMillis: 30000,
+    // Each export cycle triggers the queueDepthGauge callbacks, which hit Redis
+    // (getJobCounts) regardless of traffic. Keep this long — queue depth doesn't
+    // need second-by-second resolution — to avoid paying per-command Redis costs
+    // (e.g. Upstash) for metrics nobody is actively watching.
+    exportIntervalMillis: 3000000,
   });
 
   const sampler = new ParentBasedSampler({

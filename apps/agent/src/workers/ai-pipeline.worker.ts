@@ -101,6 +101,11 @@ export function startAiPipelineWorker(): Worker {
     connection: bullMqConnection(),
     concurrency: 3,
     limiter: { max: 5, duration: 1000 },
+    // New jobs wake an idle worker instantly via Redis pub/sub — drainDelay only
+    // controls how often an idle worker re-polls Redis when the queue is empty.
+    // Widen both to cut idle Redis command volume (matters on per-command billing).
+    drainDelay: 3000,
+    stalledInterval: 600000,
   });
 
   worker.on('failed', async (job, error) => {
