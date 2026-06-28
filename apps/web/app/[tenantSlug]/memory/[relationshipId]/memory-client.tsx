@@ -80,13 +80,18 @@ export function MemoryPageClient({ tenantSlug, relationshipId }: MemoryPageClien
         </ComponentErrorBoundary>
       )}
 
-      {insightOpen && (
-        <MemoryInsightPanel
-          relationshipId={relationshipId}
-          health={latestHealth}
-          onClose={() => setInsightOpen(false)}
-        />
-      )}
+      {/*
+        Always mounted (visibility is controlled by `open`, not conditional mounting) so the
+        in-progress chat survives closing/reopening the panel. It only resets if this page
+        unmounts entirely (e.g. navigating to a different relationship) — see the panel's
+        ephemeral-session note for why that's communicated to the user instead of persisted.
+      */}
+      <MemoryInsightPanel
+        relationshipId={relationshipId}
+        health={latestHealth}
+        open={insightOpen}
+        onClose={() => setInsightOpen(false)}
+      />
     </div>
   );
 }
